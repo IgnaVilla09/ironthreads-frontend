@@ -11,13 +11,22 @@ import { ErrorState } from '@/components/shared/error-state';
 import { EmptyState } from '@/components/shared/empty-state';
 import { Pagination } from '@/components/shared/pagination';
 import { useProductStore } from '@/stores/product-store';
+import { apiClient } from '@/lib/api-client';
+import { GeneralStats } from '@/types/analytics';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Package } from 'lucide-react';
 
 export default function ProductosPage() {
   const { products, pagination, isLoading, isError, errorMessage, filters, searchQuery, fetchProducts } = useProductStore();
   const [page, setPage] = useState(1);
+  const [totalStock, setTotalStock] = useState<number | null>(null);
+
+  useEffect(() => {
+    apiClient.get<GeneralStats>('/api/v1/analytics/general-stats')
+      .then((res) => setTotalStock(res.data?.totalStock ?? null))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     setPage(1);
@@ -55,6 +64,14 @@ export default function ProductosPage() {
           </Button>
         </Link>
       </PageHeader>
+
+      {totalStock !== null && (
+        <div className="mb-6 flex items-center gap-2 rounded-xl border bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <Package className="h-4 w-4" />
+          <span className="font-medium">Valor total del inventario:</span>
+          <span className="font-bold">{totalStock} unidades</span>
+        </div>
+      )}
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <ProductSearch />

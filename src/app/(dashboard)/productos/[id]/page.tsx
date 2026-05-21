@@ -11,7 +11,7 @@ import { StockBadge } from '@/components/shared/stock-badge';
 import { useProductStore } from '@/stores/product-store';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Pencil, Package } from 'lucide-react';
+import { Pencil, Package, Layers } from 'lucide-react';
 
 export default function ProductoPage() {
   const params = useParams();
@@ -56,6 +56,12 @@ export default function ProductoPage() {
         </Link>
       </PageHeader>
 
+      {selectedProduct.description && (
+        <div className="mb-6 max-w-2xl">
+          <p className="text-sm text-gray-600">{selectedProduct.description}</p>
+        </div>
+      )}
+
       <div className="max-w-2xl">
         {selectedProduct.variants.length === 0 ? (
           <div className="rounded-xl border bg-white p-12 text-center">
@@ -63,7 +69,14 @@ export default function ProductoPage() {
             <p className="text-gray-500">Este producto no tiene variantes.</p>
           </div>
         ) : (
-          <div className="rounded-xl border bg-white">
+          <>
+            <div className="mb-4 flex items-center gap-2 rounded-xl border bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              <Layers className="h-4 w-4" />
+              <span className="font-medium">Stock total del producto:</span>
+              <span className="font-bold">{selectedProduct.variants.reduce((sum, v) => sum + v.stock, 0)} unidades</span>
+            </div>
+
+            <div className="rounded-xl border bg-white">
             <table className="w-full">
               <thead>
                 <tr className="border-b text-left">
@@ -115,6 +128,7 @@ export default function ProductoPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </PageContainer>

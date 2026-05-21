@@ -42,7 +42,7 @@ const statCards = [
     icon: AlertTriangle,
     color: 'text-red-600',
     bgColor: 'bg-red-50',
-    getValue: (d: GeneralStats) => `${d.lowStockCount} (${d.lowStockPercentage}%)`,
+    getValue: (d: GeneralStats) => `${d.lowStockSum} uds. (${d.lowStockPercentage}%)`,
   },
 ];
 

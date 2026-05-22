@@ -7,6 +7,8 @@ import { useUiStore } from '@/stores/ui-store';
 import {
   LayoutDashboard,
   Package,
+  ShoppingCart,
+  History,
   Settings,
   Plus,
   X,
@@ -19,6 +21,16 @@ const navigation = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    label: 'Ventas',
+    href: '/ventas',
+    icon: ShoppingCart,
+  },
+  {
+    label: 'Historial',
+    href: '/ventas/historial',
+    icon: History,
   },
   {
     label: 'Productos',

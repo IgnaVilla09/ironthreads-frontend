@@ -286,8 +286,11 @@ export default function VentasPage() {
                           className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 flex items-center gap-3 transition-colors"
                         >
                           <Package className="h-4 w-4 text-gray-400 shrink-0" />
-                          <div>
-                            <p className="font-medium">{product.name}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{product.name}</p>
+                            {product.description && (
+                              <p className="text-xs text-gray-400 truncate">{product.description}</p>
+                            )}
                             <p className="text-xs text-gray-500">
                               {product.category.label} · {product.variants.length} variante{product.variants.length !== 1 ? 's' : ''}
                             </p>

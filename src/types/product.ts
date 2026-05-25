@@ -1,4 +1,4 @@
-import type { CategoryOption, ColorOption, SizeOption } from './settings';
+import type { CategoryOption, ColorOption, SizeOption, PointOfSaleOption } from './settings';
 
 export interface ProductVariant {
   id: string;
@@ -19,6 +19,8 @@ export interface Product {
   description: string | null;
   categoryId: string;
   category: CategoryOption;
+  pointOfSaleId: string;
+  pointOfSale: PointOfSaleOption;
   createdAt: string;
   updatedAt: string;
   variants: ProductVariant[];
@@ -28,12 +30,14 @@ export interface CreateProductInput {
   name: string;
   description?: string;
   categoryId: string;
+  pointOfSaleId: string;
 }
 
 export interface UpdateProductInput {
   name?: string;
   description?: string;
   categoryId?: string;
+  pointOfSaleId?: string;
 }
 
 export interface CreateVariantInput {
@@ -50,5 +54,6 @@ export interface UpdateVariantInput {
 
 export interface ProductFilters {
   categoryId?: string;
+  pointOfSaleId?: string;
   search?: string;
 }

@@ -22,11 +22,13 @@ import type {
   CategoryOption,
   ColorOption,
   SizeOption,
+  PointOfSaleOption,
 } from '@/types/settings';
 
-type Tab = 'colores' | 'talles' | 'categorias';
+type Tab = 'colores' | 'talles' | 'categorias' | 'puntos-venta';
 
 const tabs: { key: Tab; label: string }[] = [
+  { key: 'puntos-venta', label: 'Puntos de Venta' },
   { key: 'colores', label: 'Colores' },
   { key: 'talles', label: 'Talles' },
   { key: 'categorias', label: 'Categorías' },
@@ -60,12 +62,13 @@ function ColorSwatch({ hex }: { hex: string | null }) {
 }
 
 export default function ConfiguracionPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('colores');
+  const [activeTab, setActiveTab] = useState<Tab>('puntos-venta');
   const addToast = useToastStore((s) => s.addToast);
   const {
     categories,
     colors,
     sizes,
+    pointsOfSale,
     isLoading,
     isSubmitting,
     fetchAll,
@@ -78,6 +81,9 @@ export default function ConfiguracionPage() {
     createSize,
     updateSize,
     deleteSize,
+    createPointOfSale,
+    updatePointOfSale,
+    deletePointOfSale,
   } = useSettingsStore();
 
   useEffect(() => {
@@ -108,6 +114,14 @@ export default function ConfiguracionPage() {
   const [sizeForm, setSizeForm] = useState(emptySize());
   const [sizeDelete, setSizeDelete] = useState<SizeOption | null>(null);
 
+  // Point of Sale dialog
+  const [posDialog, setPosDialog] = useState<DialogState<PointOfSaleOption>>({
+    open: false,
+    editItem: null,
+  });
+  const [posForm, setPosForm] = useState({ name: '', label: '' });
+  const [posDelete, setPosDelete] = useState<PointOfSaleOption | null>(null);
+
   function openCategoryDialog(item: CategoryOption | null) {
     setCatDialog({ open: true, editItem: item });
     setCatForm(item ? { name: item.name, label: item.label } : emptyCategory());
@@ -123,6 +137,11 @@ export default function ConfiguracionPage() {
   function openSizeDialog(item: SizeOption | null) {
     setSizeDialog({ open: true, editItem: item });
     setSizeForm(item ? { name: item.name, label: item.label } : emptySize());
+  }
+
+  function openPosDialog(item: PointOfSaleOption | null) {
+    setPosDialog({ open: true, editItem: item });
+    setPosForm(item ? { name: item.name, label: item.label } : { name: '', label: '' });
   }
 
   async function handleCategorySubmit() {
@@ -200,6 +219,33 @@ export default function ConfiguracionPage() {
     }
   }
 
+  async function handlePosSubmit() {
+    if (!posForm.name.trim() || !posForm.label.trim()) return;
+    try {
+      if (posDialog.editItem) {
+        await updatePointOfSale(posDialog.editItem.id, posForm);
+        addToast('Punto de venta actualizado correctamente', 'success');
+      } else {
+        await createPointOfSale(posForm);
+        addToast('Punto de venta creado correctamente', 'success');
+      }
+      setPosDialog({ open: false, editItem: null });
+    } catch {
+      addToast('Error al guardar el punto de venta', 'error');
+    }
+  }
+
+  async function handleDeletePos() {
+    if (!posDelete) return;
+    try {
+      await deletePointOfSale(posDelete.id);
+      addToast('Punto de venta eliminado correctamente', 'success');
+      setPosDelete(null);
+    } catch {
+      addToast('Error al eliminar el punto de venta', 'error');
+    }
+  }
+
   async function handleDeleteSize() {
     if (!sizeDelete) return;
     try {
@@ -242,6 +288,67 @@ export default function ConfiguracionPage() {
           </button>
         ))}
       </div>
+
+      {/* Puntos de Venta Tab */}
+      {activeTab === 'puntos-venta' && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm text-gray-500">{pointsOfSale.length} puntos de venta</p>
+            <Button size="sm" onClick={() => openPosDialog(null)}>
+              <Plus className="mr-1 h-4 w-4" />
+              Agregar punto de venta
+            </Button>
+          </div>
+          <div className="overflow-hidden rounded-lg border">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Nombre</th>
+                  <th className="px-4 py-3 font-medium">Etiqueta</th>
+                  <th className="px-4 py-3 text-right font-medium">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {pointsOfSale.map((pos) => (
+                  <tr key={pos.name} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono text-xs font-medium uppercase">
+                      {pos.name}
+                    </td>
+                    <td className="px-4 py-3">{pos.label}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openPosDialog(pos)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-500"
+                          onClick={() => setPosDelete(pos)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {pointsOfSale.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
+                      No hay puntos de venta todavía.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Colores Tab */}
       {activeTab === 'colores' && (
@@ -546,6 +653,55 @@ export default function ConfiguracionPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Point of Sale Dialog */}
+      <Dialog
+        open={posDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setPosDialog({ open: false, editItem: null });
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {posDialog.editItem ? 'Editar punto de venta' : 'Agregar punto de venta'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="pos-name">Nombre</Label>
+              <Input
+                id="pos-name"
+                placeholder="Ej: DEPARTAMENTO"
+                value={posForm.name}
+                onChange={(e) => setPosForm({ ...posForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pos-label">Etiqueta</Label>
+              <Input
+                id="pos-label"
+                placeholder="Ej: Departamento"
+                value={posForm.label}
+                onChange={(e) => setPosForm({ ...posForm, label: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPosDialog({ open: false, editItem: null })}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handlePosSubmit} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {posDialog.editItem ? 'Guardar' : 'Crear'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Size Dialog */}
       <Dialog
         open={sizeDialog.open}
@@ -615,6 +771,17 @@ export default function ConfiguracionPage() {
         confirmLabel="Eliminar"
         variant="destructive"
         onConfirm={handleDeleteColor}
+        isLoading={isSubmitting}
+      />
+
+      <ConfirmDialog
+        open={!!posDelete}
+        onOpenChange={(open) => { if (!open) setPosDelete(null); }}
+        title="Eliminar punto de venta"
+        description={`¿Estás seguro de eliminar "${posDelete?.label}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        variant="destructive"
+        onConfirm={handleDeletePos}
         isLoading={isSubmitting}
       />
 

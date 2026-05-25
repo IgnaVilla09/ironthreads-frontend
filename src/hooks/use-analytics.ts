@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { SizeDistribution, ColorDistribution, LowStockVariant, GeneralStats } from '@/types/analytics';
+import { SizeDistribution, ColorDistribution, BestSellingSize, GeneralStats } from '@/types/analytics';
 
 interface AnalyticsState {
   bySize: SizeDistribution[];
   byColor: ColorDistribution[];
-  lowStock: LowStockVariant[];
+  bestSellingSizes: BestSellingSize[];
   generalStats: GeneralStats | null;
   isLoading: boolean;
   isError: boolean;
@@ -17,7 +17,7 @@ export function useAnalytics() {
   const [state, setState] = useState<AnalyticsState>({
     bySize: [],
     byColor: [],
-    lowStock: [],
+    bestSellingSizes: [],
     generalStats: null,
     isLoading: true,
     isError: false,
@@ -26,17 +26,17 @@ export function useAnalytics() {
   useEffect(() => {
     async function fetchAll() {
       try {
-        const [sizeRes, colorRes, lowStockRes, statsRes] = await Promise.all([
+        const [sizeRes, colorRes, bestSellingRes, statsRes] = await Promise.all([
           apiClient.get<SizeDistribution[]>('/api/v1/analytics/by-size'),
           apiClient.get<ColorDistribution[]>('/api/v1/analytics/by-color'),
-          apiClient.get<LowStockVariant[]>('/api/v1/analytics/low-stock'),
+          apiClient.get<BestSellingSize[]>('/api/v1/analytics/best-selling-sizes'),
           apiClient.get<GeneralStats>('/api/v1/analytics/general-stats'),
         ]);
 
         setState({
           bySize: sizeRes.data ?? [],
           byColor: colorRes.data ?? [],
-          lowStock: lowStockRes.data ?? [],
+          bestSellingSizes: bestSellingRes.data ?? [],
           generalStats: statsRes.data ?? null,
           isLoading: false,
           isError: false,

@@ -8,6 +8,7 @@ export const createProductSchema = z.object({
     .transform((v) => v.toUpperCase().trim()),
   description: z.string().max(500).optional(),
   categoryId: z.string().uuid('Seleccioná una categoría válida'),
+  pointOfSaleId: z.string().uuid('Seleccioná un punto de venta válido'),
 });
 
 export type CreateProductFormData = z.infer<typeof createProductSchema>;

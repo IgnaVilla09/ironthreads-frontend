@@ -5,12 +5,12 @@ import { PageHeader } from '@/components/shared/page-header';
 import { StatsCards } from '@/components/analytics/stats-cards';
 import { PieChartBySize } from '@/components/analytics/pie-chart-by-size';
 import { PieChartByColor } from '@/components/analytics/pie-chart-by-color';
-import { LowStockChart } from '@/components/analytics/low-stock-chart';
+import { BestSellingSizesChart } from '@/components/analytics/best-selling-sizes-chart';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { ErrorState } from '@/components/shared/error-state';
 
 export default function DashboardPage() {
-  const { bySize, byColor, lowStock, generalStats, isLoading, isError } = useAnalytics();
+  const { bySize, byColor, bestSellingSizes, generalStats, isLoading, isError } = useAnalytics();
 
   if (isError) {
     return (
@@ -34,7 +34,7 @@ export default function DashboardPage() {
         <PieChartByColor data={byColor} isLoading={isLoading} />
       </div>
       <div className="mt-6">
-        <LowStockChart data={lowStock} isLoading={isLoading} />
+        <BestSellingSizesChart data={bestSellingSizes} isLoading={isLoading} />
       </div>
     </PageContainer>
   );

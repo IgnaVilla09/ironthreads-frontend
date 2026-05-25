@@ -44,7 +44,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
     isSubmitting,
   } = useProductStore();
 
-  const { categories, colors, sizes, fetchAll } = useSettingsStore();
+  const { categories, colors, sizes, pointsOfSale, fetchAll } = useSettingsStore();
 
   const addToast = useToastStore((s) => s.addToast);
   const [showVariantForm, setShowVariantForm] = useState(false);
@@ -68,8 +68,9 @@ export function ProductForm({ initialData }: ProductFormProps) {
           name: initialData.name,
           description: initialData.description ?? '',
           categoryId: initialData.categoryId,
+          pointOfSaleId: initialData.pointOfSaleId,
         }
-      : { name: '', description: '', categoryId: '' },
+      : { name: '', description: '', categoryId: '', pointOfSaleId: '' },
   });
 
   const name = watch('name');
@@ -87,6 +88,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
           name: data.name,
           description: data.description || undefined,
           categoryId: data.categoryId,
+          pointOfSaleId: data.pointOfSaleId,
         });
         addToast('Producto actualizado correctamente', 'success');
       } else {
@@ -94,6 +96,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
           name: data.name,
           description: data.description || undefined,
           categoryId: data.categoryId,
+          pointOfSaleId: data.pointOfSaleId,
         });
         if (newVariant.colorId && newVariant.sizeId) {
           await createVariant(product.id, newVariant);
@@ -191,6 +194,25 @@ export function ProductForm({ initialData }: ProductFormProps) {
               </select>
               {errors.categoryId && (
                 <p className="text-sm text-red-500">{errors.categoryId.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pointOfSale">Punto de Venta</Label>
+              <select
+                id="pointOfSale"
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                {...register('pointOfSaleId')}
+              >
+                <option value="">Seleccionar...</option>
+                {pointsOfSale.map((pos) => (
+                  <option key={pos.id || pos.name} value={pos.id}>
+                    {pos.label}
+                  </option>
+                ))}
+              </select>
+              {errors.pointOfSaleId && (
+                <p className="text-sm text-red-500">{errors.pointOfSaleId.message}</p>
               )}
             </div>
 

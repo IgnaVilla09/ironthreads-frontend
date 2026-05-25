@@ -5,21 +5,38 @@ import { PageContainer } from '@/components/layout/page-container';
 import { PageHeader } from '@/components/shared/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { apiClient } from '@/lib/api-client';
 import { Sale } from '@/types/venta';
 import { PaginationMeta } from '@/types/api';
 import { formatDate } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
-import { ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { LoadingState } from '@/components/shared/loading-state';
 import { EmptyState } from '@/components/shared/empty-state';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+function todayStr() {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
+
+function monthAgoStr() {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 1);
+  return d.toISOString().split('T')[0];
+}
 
 export default function HistorialVentasPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [page, setPage] = useState(1);
+  const [dateFrom, setDateFrom] = useState(monthAgoStr());
+  const [dateTo, setDateTo] = useState(todayStr());
+  const [isExporting, setIsExporting] = useState(false);
 
   const fetchSales = useCallback(async (p: number) => {
     setIsLoading(true);
@@ -41,6 +58,31 @@ export default function HistorialVentasPage() {
     fetchSales(page);
   }, [page, fetchSales]);
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const params = new URLSearchParams({ from: dateFrom, to: dateTo });
+      const url = `${API_BASE}/api/v1/ventas/export?${params}`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Error al exportar');
+
+      const blob = await res.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `ventas-${dateFrom}-${dateTo}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch {
+      alert('Error al exportar el informe');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <PageContainer>
       <PageHeader
@@ -54,6 +96,43 @@ export default function HistorialVentasPage() {
           </Button>
         </Link>
       </PageHeader>
+
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">Desde</label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">Hasta</label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <Button
+              onClick={handleExport}
+              disabled={isExporting || !dateFrom || !dateTo}
+              className="gap-2"
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              {isExporting ? 'Exportando...' : 'Exportar a Excel'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="p-0">

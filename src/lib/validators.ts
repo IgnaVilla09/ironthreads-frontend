@@ -9,6 +9,7 @@ export const createProductSchema = z.object({
   description: z.string().max(500).optional(),
   categoryId: z.string().uuid('Seleccioná una categoría válida'),
   pointOfSaleId: z.string().uuid('Seleccioná un punto de venta válido'),
+  depositoId: z.string().uuid('Depósito inválido').nullable().optional(),
 });
 
 export type CreateProductFormData = z.infer<typeof createProductSchema>;

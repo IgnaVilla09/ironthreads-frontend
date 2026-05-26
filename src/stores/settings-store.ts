@@ -4,6 +4,7 @@ import type {
   ColorOption,
   SizeOption,
   PointOfSaleOption,
+  DepositoOption,
   CreateCategoryInput,
   UpdateCategoryInput,
   CreateColorInput,
@@ -12,6 +13,8 @@ import type {
   UpdateSizeInput,
   CreatePointOfSaleInput,
   UpdatePointOfSaleInput,
+  CreateDepositoInput,
+  UpdateDepositoInput,
 } from '@/types/settings';
 import { apiClient } from '@/lib/api-client';
 import { DEFAULT_CATEGORIES, DEFAULT_COLORS, DEFAULT_SIZES } from '@/lib/constants';
@@ -21,6 +24,7 @@ interface SettingsState {
   colors: ColorOption[];
   sizes: SizeOption[];
   pointsOfSale: PointOfSaleOption[];
+  depositos: DepositoOption[];
   isLoading: boolean;
   isSubmitting: boolean;
 
@@ -28,6 +32,7 @@ interface SettingsState {
   fetchColors: () => Promise<void>;
   fetchSizes: () => Promise<void>;
   fetchPointsOfSale: () => Promise<void>;
+  fetchDepositos: (pointOfSaleId: string) => Promise<void>;
   fetchAll: () => Promise<void>;
 
   createCategory: (input: CreateCategoryInput) => Promise<void>;
@@ -45,6 +50,10 @@ interface SettingsState {
   createPointOfSale: (input: CreatePointOfSaleInput) => Promise<void>;
   updatePointOfSale: (id: string, input: UpdatePointOfSaleInput) => Promise<void>;
   deletePointOfSale: (id: string) => Promise<void>;
+
+  createDeposito: (pointOfSaleId: string, input: CreateDepositoInput) => Promise<void>;
+  updateDeposito: (id: string, input: UpdateDepositoInput) => Promise<void>;
+  deleteDeposito: (id: string) => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -52,6 +61,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   colors: DEFAULT_COLORS,
   sizes: DEFAULT_SIZES,
   pointsOfSale: [],
+  depositos: [],
   isLoading: false,
   isSubmitting: false,
 
@@ -88,6 +98,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       if (res.data) set({ pointsOfSale: res.data });
     } catch {
       // keep defaults (empty)
+    }
+  },
+
+  fetchDepositos: async (pointOfSaleId: string) => {
+    try {
+      const res = await apiClient.get<DepositoOption[]>(`/api/v1/settings/points-of-sale/${pointOfSaleId}/depositos`);
+      if (res.data) {
+        const otherDepositos = get().depositos.filter((d) => d.pointOfSaleId !== pointOfSaleId);
+        set({ depositos: [...otherDepositos, ...res.data] });
+      }
+    } catch {
+      // silently fail
     }
   },
 
@@ -248,7 +270,51 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ isSubmitting: true });
     try {
       await apiClient.delete(`/api/v1/settings/points-of-sale/${id}`);
-      set((state) => ({ pointsOfSale: state.pointsOfSale.filter((p) => p.id !== id) }));
+      set((state) => ({
+        pointsOfSale: state.pointsOfSale.filter((p) => p.id !== id),
+        depositos: state.depositos.filter((d) => d.pointOfSaleId !== id),
+      }));
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+
+  createDeposito: async (pointOfSaleId, input) => {
+    set({ isSubmitting: true });
+    try {
+      const res = await apiClient.post<DepositoOption>(
+        `/api/v1/settings/points-of-sale/${pointOfSaleId}/depositos`,
+        input
+      );
+      if (res.data) {
+        set((state) => ({
+          depositos: [...state.depositos, res.data!],
+        }));
+      }
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+
+  updateDeposito: async (id, input) => {
+    set({ isSubmitting: true });
+    try {
+      const res = await apiClient.put<DepositoOption>(`/api/v1/settings/depositos/${id}`, input);
+      if (res.data) {
+        set((state) => ({
+          depositos: state.depositos.map((d) => (d.id === id ? res.data! : d)),
+        }));
+      }
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+
+  deleteDeposito: async (id) => {
+    set({ isSubmitting: true });
+    try {
+      await apiClient.delete(`/api/v1/settings/depositos/${id}`);
+      set((state) => ({ depositos: state.depositos.filter((d) => d.id !== id) }));
     } finally {
       set({ isSubmitting: false });
     }

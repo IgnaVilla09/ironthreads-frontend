@@ -44,7 +44,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
     isSubmitting,
   } = useProductStore();
 
-  const { categories, colors, sizes, pointsOfSale, fetchAll } = useSettingsStore();
+  const { categories, colors, sizes, pointsOfSale, depositos, fetchAll, fetchDepositos } = useSettingsStore();
 
   const addToast = useToastStore((s) => s.addToast);
   const [showVariantForm, setShowVariantForm] = useState(false);
@@ -69,11 +69,24 @@ export function ProductForm({ initialData }: ProductFormProps) {
           description: initialData.description ?? '',
           categoryId: initialData.categoryId,
           pointOfSaleId: initialData.pointOfSaleId,
+          depositoId: initialData.depositoId ?? null,
         }
-      : { name: '', description: '', categoryId: '', pointOfSaleId: '' },
+      : { name: '', description: '', categoryId: '', pointOfSaleId: '', depositoId: null },
   });
 
   const name = watch('name');
+  const selectedPointOfSaleId = watch('pointOfSaleId');
+
+  useEffect(() => {
+    if (selectedPointOfSaleId) {
+      fetchDepositos(selectedPointOfSaleId);
+    }
+  }, [selectedPointOfSaleId, fetchDepositos]);
+
+  const filteredDepositos = depositos.filter(
+    (d) => d.pointOfSaleId === selectedPointOfSaleId
+  );
+
   const previewSkuBase = name
     ? name.toUpperCase().trim().replace(/\s+/g, '').replace(/[^A-Z0-9]/g, '').slice(0, 10)
     : null;
@@ -89,6 +102,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
           description: data.description || undefined,
           categoryId: data.categoryId,
           pointOfSaleId: data.pointOfSaleId,
+          depositoId: data.depositoId ?? null,
         });
         addToast('Producto actualizado correctamente', 'success');
       } else {
@@ -97,6 +111,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
           description: data.description || undefined,
           categoryId: data.categoryId,
           pointOfSaleId: data.pointOfSaleId,
+          depositoId: data.depositoId ?? undefined,
         });
         if (newVariant.colorId && newVariant.sizeId) {
           await createVariant(product.id, newVariant);
@@ -213,6 +228,26 @@ export function ProductForm({ initialData }: ProductFormProps) {
               </select>
               {errors.pointOfSaleId && (
                 <p className="text-sm text-red-500">{errors.pointOfSaleId.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="deposito">Depósito (opcional)</Label>
+              <select
+                id="deposito"
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                {...register('depositoId')}
+                disabled={!selectedPointOfSaleId}
+              >
+                <option value="">Sin asignar</option>
+                {filteredDepositos.map((dep) => (
+                  <option key={dep.id} value={dep.id}>
+                    {dep.label}
+                  </option>
+                ))}
+              </select>
+              {errors.depositoId && (
+                <p className="text-sm text-red-500">{errors.depositoId.message}</p>
               )}
             </div>
 

@@ -51,6 +51,7 @@ export function ProductTable({ products, pagination }: ProductTableProps) {
               <TableHead>Producto</TableHead>
               <TableHead>Categoría</TableHead>
               <TableHead>Punto de Venta</TableHead>
+              <TableHead>Depósito</TableHead>
               <TableHead>Variantes</TableHead>
               <TableHead>Stock Total</TableHead>
               <TableHead>Actualizado</TableHead>
@@ -88,6 +89,11 @@ export function ProductTable({ products, pagination }: ProductTableProps) {
                   <TableCell>
                     <span className="text-sm text-gray-600">
                       {product.pointOfSale?.label ?? '—'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-gray-600">
+                      {product.deposito?.label ?? 'Sin asignar'}
                     </span>
                   </TableCell>
                   <TableCell>

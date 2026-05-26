@@ -23,6 +23,7 @@ import type {
   ColorOption,
   SizeOption,
   PointOfSaleOption,
+  DepositoOption,
 } from '@/types/settings';
 
 type Tab = 'colores' | 'talles' | 'categorias' | 'puntos-venta';
@@ -69,6 +70,7 @@ export default function ConfiguracionPage() {
     colors,
     sizes,
     pointsOfSale,
+    depositos,
     isLoading,
     isSubmitting,
     fetchAll,
@@ -84,6 +86,10 @@ export default function ConfiguracionPage() {
     createPointOfSale,
     updatePointOfSale,
     deletePointOfSale,
+    fetchDepositos,
+    createDeposito,
+    updateDeposito,
+    deleteDeposito,
   } = useSettingsStore();
 
   useEffect(() => {
@@ -121,6 +127,15 @@ export default function ConfiguracionPage() {
   });
   const [posForm, setPosForm] = useState({ name: '', label: '' });
   const [posDelete, setPosDelete] = useState<PointOfSaleOption | null>(null);
+
+  // Deposito dialog
+  const [selectedPosForDepositos, setSelectedPosForDepositos] = useState<PointOfSaleOption | null>(null);
+  const [depDialog, setDepDialog] = useState<DialogState<DepositoOption>>({
+    open: false,
+    editItem: null,
+  });
+  const [depForm, setDepForm] = useState({ name: '', label: '' });
+  const [depDelete, setDepDelete] = useState<DepositoOption | null>(null);
 
   function openCategoryDialog(item: CategoryOption | null) {
     setCatDialog({ open: true, editItem: item });
@@ -257,6 +272,46 @@ export default function ConfiguracionPage() {
     }
   }
 
+  // Deposito handlers
+  function openDepositoDialog(item: DepositoOption | null) {
+    setDepDialog({ open: true, editItem: item });
+    setDepForm(item ? { name: item.name, label: item.label } : { name: '', label: '' });
+  }
+
+  async function handleDepositoSubmit() {
+    if (!depForm.name.trim() || !depForm.label.trim() || !selectedPosForDepositos) return;
+    try {
+      if (depDialog.editItem) {
+        await updateDeposito(depDialog.editItem.id, depForm);
+        addToast('Depósito actualizado correctamente', 'success');
+      } else {
+        await createDeposito(selectedPosForDepositos.id, depForm);
+        addToast('Depósito creado correctamente', 'success');
+      }
+      await fetchDepositos(selectedPosForDepositos.id);
+      setDepDialog({ open: false, editItem: null });
+    } catch {
+      addToast('Error al guardar el depósito', 'error');
+    }
+  }
+
+  async function handleDeleteDeposito() {
+    if (!depDelete) return;
+    try {
+      await deleteDeposito(depDelete.id);
+      addToast('Depósito eliminado correctamente', 'success');
+      if (selectedPosForDepositos) await fetchDepositos(selectedPosForDepositos.id);
+      setDepDelete(null);
+    } catch {
+      addToast('Error al eliminar el depósito', 'error');
+    }
+  }
+
+  async function openPosDepositos(pos: PointOfSaleOption) {
+    setSelectedPosForDepositos(pos);
+    await fetchDepositos(pos.id);
+  }
+
   if (isLoading && categories.length === 0) {
     return (
       <PageContainer>
@@ -305,41 +360,58 @@ export default function ConfiguracionPage() {
                 <tr>
                   <th className="px-4 py-3 font-medium">Nombre</th>
                   <th className="px-4 py-3 font-medium">Etiqueta</th>
+                  <th className="px-4 py-3 font-medium">Depósitos</th>
                   <th className="px-4 py-3 text-right font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {pointsOfSale.map((pos) => (
-                  <tr key={pos.name} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs font-medium uppercase">
-                      {pos.name}
-                    </td>
-                    <td className="px-4 py-3">{pos.label}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => openPosDialog(pos)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500"
-                          onClick={() => setPosDelete(pos)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {pointsOfSale.map((pos) => {
+                  const posDepositos = depositos.filter((d) => d.pointOfSaleId === pos.id);
+                  return (
+                    <tr key={pos.name} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-mono text-xs font-medium uppercase">
+                        {pos.name}
+                      </td>
+                      <td className="px-4 py-3">{pos.label}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-500">{posDepositos.length}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => openPosDepositos(pos)}
+                          >
+                            Administrar
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openPosDialog(pos)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500"
+                            onClick={() => setPosDelete(pos)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {pointsOfSale.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
                       No hay puntos de venta todavía.
                     </td>
                   </tr>
@@ -347,6 +419,128 @@ export default function ConfiguracionPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Depositos Dialog */}
+          <Dialog
+            open={!!selectedPosForDepositos}
+            onOpenChange={(open) => { if (!open) setSelectedPosForDepositos(null); }}
+          >
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>
+                  Depósitos — {selectedPosForDepositos?.label}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-500">
+                    {depositos.filter((d) => d.pointOfSaleId === selectedPosForDepositos?.id).length} depósitos
+                  </p>
+                  <Button size="sm" onClick={() => openDepositoDialog(null)}>
+                    <Plus className="mr-1 h-4 w-4" />
+                    Agregar depósito
+                  </Button>
+                </div>
+                <div className="overflow-hidden rounded-lg border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">Nombre</th>
+                        <th className="px-4 py-3 font-medium">Etiqueta</th>
+                        <th className="px-4 py-3 text-right font-medium">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {depositos
+                        .filter((d) => d.pointOfSaleId === selectedPosForDepositos?.id)
+                        .map((dep) => (
+                          <tr key={dep.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-mono text-xs font-medium uppercase">
+                              {dep.name}
+                            </td>
+                            <td className="px-4 py-3">{dep.label}</td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => openDepositoDialog(dep)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500"
+                                  onClick={() => setDepDelete(dep)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      {depositos.filter((d) => d.pointOfSaleId === selectedPosForDepositos?.id).length === 0 && (
+                        <tr>
+                          <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
+                            No hay depósitos en este punto de venta.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Deposito Create/Edit Dialog */}
+          <Dialog
+            open={depDialog.open}
+            onOpenChange={(open) => { if (!open) setDepDialog({ open: false, editItem: null }); }}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {depDialog.editItem ? 'Editar depósito' : 'Agregar depósito'}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="dep-name">Nombre</Label>
+                  <Input
+                    id="dep-name"
+                    placeholder="Ej: CAJA 1"
+                    value={depForm.name}
+                    onChange={(e) => setDepForm({ ...depForm, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dep-label">Etiqueta</Label>
+                  <Input
+                    id="dep-label"
+                    placeholder="Ej: Caja 1"
+                    value={depForm.label}
+                    onChange={(e) => setDepForm({ ...depForm, label: e.target.value })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setDepDialog({ open: false, editItem: null })}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={handleDepositoSubmit} disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {depDialog.editItem ? 'Guardar' : 'Crear'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 
@@ -778,10 +972,21 @@ export default function ConfiguracionPage() {
         open={!!posDelete}
         onOpenChange={(open) => { if (!open) setPosDelete(null); }}
         title="Eliminar punto de venta"
-        description={`¿Estás seguro de eliminar "${posDelete?.label}"? Esta acción no se puede deshacer.`}
+        description={`¿Estás seguro de eliminar "${posDelete?.label}"? También se eliminarán todos sus depósitos. Esta acción no se puede deshacer.`}
         confirmLabel="Eliminar"
         variant="destructive"
         onConfirm={handleDeletePos}
+        isLoading={isSubmitting}
+      />
+
+      <ConfirmDialog
+        open={!!depDelete}
+        onOpenChange={(open) => { if (!open) setDepDelete(null); }}
+        title="Eliminar depósito"
+        description={`¿Estás seguro de eliminar "${depDelete?.label}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        variant="destructive"
+        onConfirm={handleDeleteDeposito}
         isLoading={isSubmitting}
       />
 

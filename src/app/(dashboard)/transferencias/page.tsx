@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout/page-container';
 import { PageHeader } from '@/components/shared/page-header';
@@ -20,6 +20,14 @@ import { ArrowLeftRight, Package, Search, Loader2, Check } from 'lucide-react';
 import { formatDate } from '@/lib/formatters';
 
 export default function TransferenciasPage() {
+  return (
+    <Suspense fallback={<LoadingState count={5} type="table" />}>
+      <TransferenciasContent />
+    </Suspense>
+  );
+}
+
+function TransferenciasContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const addToast = useToastStore((s) => s.addToast);

@@ -2,7 +2,7 @@
 
 import { PieChartCard } from './pie-chart-card';
 import { ColorDistribution } from '@/types/analytics';
-import { COLOR_LABELS, COLOR_HEX } from '@/lib/constants';
+import { COLOR_LABELS } from '@/lib/constants';
 
 interface PieChartByColorProps {
   data: ColorDistribution[];
@@ -13,7 +13,7 @@ export function PieChartByColor({ data, isLoading }: PieChartByColorProps) {
   const chartData = data.map((d) => ({
     name: COLOR_LABELS[d.colorName] ?? d.colorName,
     value: d.totalStock,
-    color: COLOR_HEX[d.colorName] ?? '#999',
+    color: d.hex ?? '#999',
   }));
 
   return (

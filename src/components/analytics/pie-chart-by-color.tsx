@@ -10,7 +10,7 @@ import {
   Legend,
 } from "recharts";
 import { ColorDistribution } from "@/types/analytics";
-import { COLOR_HEX, COLOR_LABELS } from "@/lib/constants";
+import { COLOR_LABELS } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PieChartByColorProps {
@@ -48,7 +48,7 @@ export function PieChartByColor({ data, isLoading }: PieChartByColorProps) {
   const chartData = data.map((d) => ({
     name: COLOR_LABELS[d.colorName] ?? d.colorName,
     value: d.totalStock,
-    color: COLOR_HEX[d.colorName] ?? "#999",
+    color: d.hex ?? "#999",
   }));
 
   return (

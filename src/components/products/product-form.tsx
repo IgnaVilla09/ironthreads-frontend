@@ -59,6 +59,9 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const [editStocks, setEditStocks] = useState<Record<string, Record<string, number>>>({});
   const [editDepositos, setEditDepositos] = useState<Record<string, Record<string, string>>>({});
   const [variantInventory, setVariantInventoryState] = useState<Record<string, InventoryItem[]>>({});
+  const [localVariantStocks, setLocalVariantStocks] = useState<Record<string, number>>(
+    () => initialData?.variants.reduce((acc, v) => ({ ...acc, [v.id]: v.stock }), {}) ?? {}
+  );
 
   useEffect(() => {
     fetchAll();
@@ -204,6 +207,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
 
     try {
       await setVariantInventory(variantId, items);
+      const newTotal = items.reduce((sum, item) => sum + item.stock, 0);
+      setLocalVariantStocks((prev) => ({ ...prev, [variantId]: newTotal }));
       setEditingVariant(null);
       setVariantInventoryState((prev) => ({ ...prev, [variantId]: [] }));
       addToast('Stock actualizado correctamente', 'success');
@@ -437,7 +442,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                             {variant.color.label} — {variant.size.label}
                           </span>
                           <Badge variant="outline" className="shrink-0">
-                            Stock: {variant.stock}
+                            Stock: {localVariantStocks[variant.id] ?? variant.stock}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">

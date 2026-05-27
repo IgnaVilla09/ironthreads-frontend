@@ -15,12 +15,15 @@ import { apiClient } from '@/lib/api-client';
 import { GeneralStats } from '@/types/analytics';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Plus, Package } from 'lucide-react';
+import { Plus, Package, Download, Loader2 } from 'lucide-react';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function ProductosPage() {
   const { products, pagination, isLoading, isError, errorMessage, filters, searchQuery, fetchProducts } = useProductStore();
   const [page, setPage] = useState(1);
   const [totalStock, setTotalStock] = useState<number | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     apiClient.get<GeneralStats>('/api/v1/analytics/general-stats')
@@ -40,6 +43,27 @@ export default function ProductosPage() {
     setPage(newPage);
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/inventory/export`);
+      if (!res.ok) throw new Error('Error al exportar');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inventario-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('Error al exportar el inventario');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (isError) {
     return (
       <PageContainer>
@@ -57,12 +81,22 @@ export default function ProductosPage() {
         title="Productos"
         description="Gestiona tu inventario de productos"
       >
-        <Link href="/productos/nuevo">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nuevo Producto
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExport} disabled={isExporting}>
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {isExporting ? 'Exportando...' : 'Exportar Excel'}
           </Button>
-        </Link>
+          <Link href="/productos/nuevo">
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nuevo Producto
+            </Button>
+          </Link>
+        </div>
       </PageHeader>
 
       {totalStock !== null && (

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Product } from '@/types/product';
 import { formatDate } from '@/lib/formatters';
-import { Pencil, Trash2, Eye, Package } from 'lucide-react';
+import { Pencil, Trash2, Eye, Package, ArrowLeftRight } from 'lucide-react';
 import { useProductStore } from '@/stores/product-store';
 import { useToastStore } from '@/stores/toast-store';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -50,12 +50,10 @@ export function ProductTable({ products, pagination }: ProductTableProps) {
             <TableRow>
               <TableHead>Producto</TableHead>
               <TableHead>Categoría</TableHead>
-              <TableHead>Punto de Venta</TableHead>
-              <TableHead>Depósito</TableHead>
               <TableHead>Variantes</TableHead>
               <TableHead>Stock Total</TableHead>
               <TableHead>Actualizado</TableHead>
-              <TableHead className="w-32">Acciones</TableHead>
+              <TableHead className="w-40">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -87,16 +85,6 @@ export function ProductTable({ products, pagination }: ProductTableProps) {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-gray-600">
-                      {product.pointOfSale?.label ?? '—'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-gray-600">
-                      {product.deposito?.label ?? 'Sin asignar'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
                     <Badge variant="secondary">{product.variants.length}</Badge>
                   </TableCell>
                   <TableCell className="font-medium">{totalStock}</TableCell>
@@ -105,9 +93,19 @@ export function ProductTable({ products, pagination }: ProductTableProps) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
+                      <Link href={`/productos/${product.id}`}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
                       <Link href={`/productos/${product.id}/editar`}>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                           <Pencil className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <Link href={`/transferencias?variantId=${product.variants[0]?.id ?? ''}&productId=${product.id}`}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Transferir stock">
+                          <ArrowLeftRight className="h-4 w-4" />
                         </Button>
                       </Link>
                       <Button
@@ -118,11 +116,6 @@ export function ProductTable({ products, pagination }: ProductTableProps) {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                      <Link href={`/productos/${product.id}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
                     </div>
                   </TableCell>
                 </TableRow>

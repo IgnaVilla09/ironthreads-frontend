@@ -7,12 +7,15 @@ export interface SaleItemInput {
 export interface CreateSaleInput {
   items: SaleItemInput[];
   paymentMethod: 'EFECTIVO' | 'MERCADO_PAGO' | 'OTRO';
+  pointOfSaleId: string;
+  depositoId?: string;
   observaciones?: string;
 }
 
 export interface SaleItem {
   id: string;
-  variantId: string;
+  variantId: string | null;
+  inventoryItemId: string | null;
   productName: string;
   colorName: string;
   sizeName: string;
@@ -22,6 +25,10 @@ export interface SaleItem {
 
 export interface Sale {
   id: string;
+  pointOfSaleId: string | null;
+  depositoId: string | null;
+  pointOfSale?: { id: string; name: string; label: string };
+  deposito?: { id: string; name: string; label: string };
   paymentMethod: string;
   total: number;
   observaciones?: string;

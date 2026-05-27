@@ -12,6 +12,7 @@ import {
   Settings,
   Plus,
   X,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -36,6 +37,11 @@ const navigation = [
     label: 'Productos',
     href: '/productos',
     icon: Package,
+  },
+  {
+    label: 'Transferencias',
+    href: '/transferencias',
+    icon: ArrowLeftRight,
   },
   {
     label: 'Configuración',

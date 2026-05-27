@@ -13,7 +13,7 @@ import { apiClient } from '@/lib/api-client';
 import { Product } from '@/types/product';
 import { ColorOption, SizeOption } from '@/types/settings';
 import { StockVerificationItem } from '@/types/venta';
-import { Search, ShoppingCart, Check, AlertTriangle, Minus, Plus, Package, Trash2 } from 'lucide-react';
+import { Search, ShoppingCart, Check, AlertTriangle, Minus, Plus, Package, Trash2, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -32,7 +32,7 @@ interface CartItem {
 
 export default function VentasPage() {
   const addToast = useToastStore((s) => s.addToast);
-  const { colors, sizes, fetchAll } = useSettingsStore();
+  const { colors, sizes, pointsOfSale, depositos, fetchAll, fetchDepositos } = useSettingsStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
@@ -47,6 +47,9 @@ export default function VentasPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<StockVerificationItem | null>(null);
 
+  const [selectedPos, setSelectedPos] = useState('');
+  const [selectedDeposito, setSelectedDeposito] = useState('');
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [observaciones, setObservaciones] = useState('');
 
@@ -54,7 +57,17 @@ export default function VentasPage() {
 
   useEffect(() => {
     fetchAll();
-  }, []);
+  }, [fetchAll]);
+
+  useEffect(() => {
+    if (selectedPos) {
+      fetchDepositos(selectedPos);
+    }
+  }, [selectedPos, fetchDepositos]);
+
+  const filteredDepositos = depositos.filter(
+    (d) => d.pointOfSaleId === selectedPos
+  );
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -132,7 +145,7 @@ export default function VentasPage() {
     : null;
 
   const hasAllSelections = selectedProduct && selectedColor && selectedSize && quantity > 0;
-  const canSubmit = cart.length > 0 && paymentMethod;
+  const canSubmit = cart.length > 0 && paymentMethod && selectedPos;
 
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => Math.max(1, prev + delta));
@@ -145,6 +158,8 @@ export default function VentasPage() {
     try {
       const res = await apiClient.post<StockVerificationItem[]>('/api/v1/ventas/verify-stock', {
         items: [{ variantId: selectedVariant.id, quantity }],
+        pointOfSaleId: selectedPos || undefined,
+        depositoId: selectedDeposito || undefined,
       });
       if (res.data && res.data.length > 0) {
         setVerificationResult(res.data[0]);
@@ -210,7 +225,7 @@ export default function VentasPage() {
   };
 
   const handleSubmit = async () => {
-    if (cart.length === 0 || !paymentMethod) return;
+    if (cart.length === 0 || !paymentMethod || !selectedPos) return;
     setIsSubmitting(true);
     try {
       await apiClient.post('/api/v1/ventas', {
@@ -220,6 +235,8 @@ export default function VentasPage() {
           unitPrice: 0,
         })),
         paymentMethod,
+        pointOfSaleId: selectedPos,
+        depositoId: selectedDeposito || undefined,
         observaciones: observaciones.trim() || undefined,
       });
       addToast('Venta registrada correctamente', 'success');
@@ -251,6 +268,33 @@ export default function VentasPage() {
           </Button>
         </Link>
       </PageHeader>
+
+      <div className="mb-4 grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center gap-1">
+            <MapPin className="h-4 w-4" /> Punto de Venta
+          </label>
+          <Select
+            value={selectedPos}
+            onChange={(e) => {
+              setSelectedPos(e.target.value);
+              setSelectedDeposito('');
+            }}
+            options={pointsOfSale.map((p) => ({ value: p.id, label: p.label }))}
+            placeholder="Seleccionar punto de venta"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Depósito (opcional)</label>
+          <Select
+            value={selectedDeposito}
+            onChange={(e) => setSelectedDeposito(e.target.value)}
+            options={filteredDepositos.map((d) => ({ value: d.id, label: d.label }))}
+            placeholder={selectedPos ? 'Todos los depósitos' : 'Primero eligé un punto de venta'}
+            disabled={!selectedPos}
+          />
+        </div>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
@@ -401,7 +445,7 @@ export default function VentasPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleVerifyStock}
-                      disabled={isVerifying}
+                      disabled={isVerifying || !selectedPos}
                       className="gap-2 w-full"
                     >
                       {isVerifying ? (
@@ -409,7 +453,7 @@ export default function VentasPage() {
                       ) : (
                         <>
                           <AlertTriangle className="h-4 w-4" />
-                          Verificar stock
+                          Verificar stock en ubicación seleccionada
                         </>
                       )}
                     </Button>
@@ -438,7 +482,7 @@ export default function VentasPage() {
                       </div>
                     )}
 
-                    {selectedVariant.stock > 0 && (
+                    {selectedVariant.stock > 0 && selectedPos && (
                       <Button
                         className="w-full gap-2"
                         onClick={handleAddToCart}
@@ -459,47 +503,26 @@ export default function VentasPage() {
                 <h2 className="text-lg font-semibold">3. Método de pago</h2>
 
                 <div className="grid grid-cols-3 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('EFECTIVO')}
-                    className={cn(
-                      'rounded-xl border-2 p-4 text-center font-semibold transition-all',
-                      paymentMethod === 'EFECTIVO'
-                        ? 'border-green-500 bg-green-50 text-green-700 shadow-sm'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-green-300 hover:bg-green-50/50'
-                    )}
-                  >
-                    <div className="text-2xl mb-1">💵</div>
-                    Efectivo
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('MERCADO_PAGO')}
-                    className={cn(
-                      'rounded-xl border-2 p-4 text-center font-semibold transition-all',
-                      paymentMethod === 'MERCADO_PAGO'
-                        ? 'border-sky-500 bg-sky-50 text-sky-700 shadow-sm'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-sky-300 hover:bg-sky-50/50'
-                    )}
-                  >
-                    <div className="text-2xl mb-1">💳</div>
-                    Mercado Pago
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('OTRO')}
-                    className={cn(
-                      'rounded-xl border-2 p-4 text-center font-semibold transition-all',
-                      paymentMethod === 'OTRO'
-                        ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-sm'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-orange-300 hover:bg-orange-50/50'
-                    )}
-                  >
-                    <div className="text-2xl mb-1">🔄</div>
-                    Otro
-                  </button>
+                  {(['EFECTIVO', 'MERCADO_PAGO', 'OTRO'] as PaymentMethod[]).map((method) => (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() => setPaymentMethod(method)}
+                      className={cn(
+                        'rounded-xl border-2 p-4 text-center font-semibold transition-all',
+                        paymentMethod === method
+                          ? method === 'EFECTIVO' ? 'border-green-500 bg-green-50 text-green-700 shadow-sm'
+                            : method === 'MERCADO_PAGO' ? 'border-sky-500 bg-sky-50 text-sky-700 shadow-sm'
+                            : 'border-orange-500 bg-orange-50 text-orange-700 shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                      )}
+                    >
+                      <div className="text-2xl mb-1">
+                        {method === 'EFECTIVO' ? '💵' : method === 'MERCADO_PAGO' ? '💳' : '🔄'}
+                      </div>
+                      {method === 'EFECTIVO' ? 'Efectivo' : method === 'MERCADO_PAGO' ? 'Mercado Pago' : 'Otro'}
+                    </button>
+                  ))}
                 </div>
 
                 {paymentMethod && (
@@ -598,6 +621,16 @@ export default function VentasPage() {
                       <span className="text-gray-600">Total items:</span>
                       <span className="text-gray-900">{cartTotalItems}</span>
                     </div>
+
+                    {selectedPos && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Ubicación:</span>
+                        <span className="font-medium">
+                          {pointsOfSale.find((p) => p.id === selectedPos)?.label}
+                          {selectedDeposito && ` / ${depositos.find((d) => d.id === selectedDeposito)?.label}`}
+                        </span>
+                      </div>
+                    )}
 
                     {paymentMethod && (
                       <div className="flex justify-between text-sm">

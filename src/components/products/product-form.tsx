@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, Trash2, Pencil, Check, X } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, Check, X, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,13 +16,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { StockBadge } from '@/components/shared/stock-badge';
 import { createProductSchema, CreateProductFormData } from '@/lib/validators';
 import { generateSku } from '@/lib/sku-utils';
 import { useProductStore } from '@/stores/product-store';
 import { useSettingsStore } from '@/stores/settings-store';
+import { useInventoryStore } from '@/stores/inventory-store';
 import { useToastStore } from '@/stores/toast-store';
-import { Product, CreateVariantInput } from '@/types/product';
+import { Product, CreateVariantInput, InventoryAllocation, InventoryItem } from '@/types/product';
 import { formatDate } from '@/lib/formatters';
 
 interface ProductFormProps {
@@ -30,7 +30,7 @@ interface ProductFormProps {
 }
 
 function emptyVariant(): CreateVariantInput {
-  return { colorId: '', sizeId: '', stock: 0 };
+  return { colorId: '', sizeId: '' };
 }
 
 export function ProductForm({ initialData }: ProductFormProps) {
@@ -39,22 +39,48 @@ export function ProductForm({ initialData }: ProductFormProps) {
     createProduct,
     updateProduct,
     createVariant,
-    updateVariant,
     deleteVariant,
     isSubmitting,
   } = useProductStore();
 
-  const { categories, colors, sizes, pointsOfSale, depositos, fetchAll, fetchDepositos } = useSettingsStore();
+  const { categories, colors, sizes, pointsOfSale, depositos, fetchAll, fetchPointsOfSale, fetchDepositos } = useSettingsStore();
 
   const addToast = useToastStore((s) => s.addToast);
+  const {
+    fetchInventoryByVariant,
+    setVariantInventory,
+  } = useInventoryStore();
+
   const [showVariantForm, setShowVariantForm] = useState(false);
   const [newVariant, setNewVariant] = useState<CreateVariantInput>(emptyVariant());
-  const [editingStockId, setEditingStockId] = useState<string | null>(null);
-  const [editingStockValue, setEditingStockValue] = useState(0);
+  const [posStocks, setPosStocks] = useState<Record<string, number>>({});
+  const [posDepositos, setPosDepositos] = useState<Record<string, string>>({});
+  const [editingVariant, setEditingVariant] = useState<string | null>(null);
+  const [editStocks, setEditStocks] = useState<Record<string, Record<string, number>>>({});
+  const [editDepositos, setEditDepositos] = useState<Record<string, Record<string, string>>>({});
+  const [variantInventory, setVariantInventoryState] = useState<Record<string, InventoryItem[]>>({});
 
   useEffect(() => {
     fetchAll();
-  }, [fetchAll]);
+    fetchPointsOfSale();
+  }, [fetchAll, fetchPointsOfSale]);
+
+  const handlePosDepositoClick = (posId: string) => {
+    const hasDepositos = depositos.some((d) => d.pointOfSaleId === posId);
+    if (!hasDepositos) {
+      fetchDepositos(posId);
+    }
+  };
+
+  const buildInventoryAllocations = (): InventoryAllocation[] => {
+    return Object.entries(posStocks)
+      .filter(([_, stock]) => stock > 0)
+      .map(([posId, stock]) => ({
+        pointOfSaleId: posId,
+        depositoId: posDepositos[posId] || undefined,
+        stock,
+      }));
+  };
 
   const {
     register,
@@ -68,24 +94,11 @@ export function ProductForm({ initialData }: ProductFormProps) {
           name: initialData.name,
           description: initialData.description ?? '',
           categoryId: initialData.categoryId,
-          pointOfSaleId: initialData.pointOfSaleId,
-          depositoId: initialData.depositoId ?? null,
         }
-      : { name: '', description: '', categoryId: '', pointOfSaleId: '', depositoId: null },
+      : { name: '', description: '', categoryId: '' },
   });
 
   const name = watch('name');
-  const selectedPointOfSaleId = watch('pointOfSaleId');
-
-  useEffect(() => {
-    if (selectedPointOfSaleId) {
-      fetchDepositos(selectedPointOfSaleId);
-    }
-  }, [selectedPointOfSaleId, fetchDepositos]);
-
-  const filteredDepositos = depositos.filter(
-    (d) => d.pointOfSaleId === selectedPointOfSaleId
-  );
 
   const previewSkuBase = name
     ? name.toUpperCase().trim().replace(/\s+/g, '').replace(/[^A-Z0-9]/g, '').slice(0, 10)
@@ -101,8 +114,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
           name: data.name,
           description: data.description || undefined,
           categoryId: data.categoryId,
-          pointOfSaleId: data.pointOfSaleId,
-          depositoId: data.depositoId ?? null,
         });
         addToast('Producto actualizado correctamente', 'success');
       } else {
@@ -110,11 +121,13 @@ export function ProductForm({ initialData }: ProductFormProps) {
           name: data.name,
           description: data.description || undefined,
           categoryId: data.categoryId,
-          pointOfSaleId: data.pointOfSaleId,
-          depositoId: data.depositoId ?? undefined,
         });
         if (newVariant.colorId && newVariant.sizeId) {
-          await createVariant(product.id, newVariant);
+          const inventory = buildInventoryAllocations();
+          await createVariant(product.id, {
+            ...newVariant,
+            inventory: inventory.length > 0 ? inventory : undefined,
+          });
           addToast('Producto y variante creados correctamente', 'success');
         } else {
           addToast('Producto creado correctamente', 'success');
@@ -130,8 +143,11 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const handleAddVariant = async () => {
     if (!initialData || !newVariant.colorId || !newVariant.sizeId) return;
     try {
-      await createVariant(initialData.id, newVariant);
+      const inventory = buildInventoryAllocations();
+      await createVariant(initialData.id, { ...newVariant, inventory: inventory.length > 0 ? inventory : undefined });
       setNewVariant(emptyVariant());
+      setPosStocks({});
+      setPosDepositos({});
       addToast('Variante agregada correctamente', 'success');
     } catch {
       addToast('Error al agregar la variante', 'error');
@@ -148,23 +164,52 @@ export function ProductForm({ initialData }: ProductFormProps) {
     }
   };
 
-  const handleEditStock = (variantId: string, currentStock: number) => {
-    setEditingStockId(variantId);
-    setEditingStockValue(currentStock);
+  const handleEditStock = async (variantId: string) => {
+    if (editingVariant === variantId) {
+      setEditingVariant(null);
+      return;
+    }
+
+    let inventory: InventoryItem[] = variantInventory[variantId];
+    if (!inventory) {
+      inventory = await fetchInventoryByVariant(variantId);
+      setVariantInventoryState((prev) => ({ ...prev, [variantId]: inventory }));
+    }
+
+    const stockMap: Record<string, number> = {};
+    const depMap: Record<string, string> = {};
+    inventory.forEach((inv) => {
+      stockMap[inv.pointOfSaleId] = inv.stock;
+      if (inv.depositoId) {
+        depMap[inv.pointOfSaleId] = inv.depositoId;
+      }
+    });
+
+    setEditStocks((prev) => ({ ...prev, [variantId]: stockMap }));
+    setEditDepositos((prev) => ({ ...prev, [variantId]: depMap }));
+    setEditingVariant(variantId);
   };
 
   const handleSaveStock = async (variantId: string) => {
+    const stocks = editStocks[variantId] ?? {};
+    const depos = editDepositos[variantId] ?? {};
+
+    const items = pointsOfSale
+      .filter((pos) => (stocks[pos.id] ?? 0) > 0)
+      .map((pos) => ({
+        pointOfSaleId: pos.id,
+        depositoId: depos[pos.id] || null,
+        stock: stocks[pos.id] ?? 0,
+      }));
+
     try {
-      await updateVariant(variantId, { stock: editingStockValue });
-      setEditingStockId(null);
+      await setVariantInventory(variantId, items);
+      setEditingVariant(null);
+      setVariantInventoryState((prev) => ({ ...prev, [variantId]: [] }));
       addToast('Stock actualizado correctamente', 'success');
     } catch {
-      addToast('Error al actualizar el stock', 'error');
+      addToast('Error al actualizar stock', 'error');
     }
-  };
-
-  const handleCancelEditStock = () => {
-    setEditingStockId(null);
   };
 
   return (
@@ -212,45 +257,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="pointOfSale">Punto de Venta</Label>
-              <select
-                id="pointOfSale"
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                {...register('pointOfSaleId')}
-              >
-                <option value="">Seleccionar...</option>
-                {pointsOfSale.map((pos) => (
-                  <option key={pos.id || pos.name} value={pos.id}>
-                    {pos.label}
-                  </option>
-                ))}
-              </select>
-              {errors.pointOfSaleId && (
-                <p className="text-sm text-red-500">{errors.pointOfSaleId.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="deposito">Depósito (opcional)</Label>
-              <select
-                id="deposito"
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                {...register('depositoId')}
-                disabled={!selectedPointOfSaleId}
-              >
-                <option value="">Sin asignar</option>
-                {filteredDepositos.map((dep) => (
-                  <option key={dep.id} value={dep.id}>
-                    {dep.label}
-                  </option>
-                ))}
-              </select>
-              {errors.depositoId && (
-                <p className="text-sm text-red-500">{errors.depositoId.message}</p>
-              )}
-            </div>
-
             {previewSkuBase && (
               <div className="rounded-lg bg-primary/5 border border-primary/10 p-3">
                 <p className="text-xs text-gray-500 mb-1">Prefijo SKU:</p>
@@ -277,24 +283,24 @@ export function ProductForm({ initialData }: ProductFormProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Variantes</CardTitle>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-1"
-                      onClick={() => setShowVariantForm(!showVariantForm)}
-                    >
-                      {showVariantForm ? (
-                        <X className="h-4 w-4" />
-                      ) : (
-                        <Plus className="h-4 w-4" />
-                      )}
-                      {showVariantForm ? 'Cerrar Variantes' : 'Agregar variante'}
-                    </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1"
+              onClick={() => setShowVariantForm(!showVariantForm)}
+            >
+              {showVariantForm ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              {showVariantForm ? 'Cerrar Variantes' : 'Agregar variante'}
+            </Button>
           </CardHeader>
           <CardContent>
             {showVariantForm && (
               <div className="mb-6 rounded-lg border p-4 space-y-4">
-                <div className="grid gap-4 sm:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Color</Label>
                     <select
@@ -330,33 +336,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
                       ))}
                     </select>
                   </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs">Stock</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={newVariant.stock}
-                      onChange={(e) =>
-                        setNewVariant({
-                          ...newVariant,
-                          stock: parseInt(e.target.value) || 0,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-end">
-                    <Button
-                      size="sm"
-                      onClick={handleAddVariant}
-                      disabled={!newVariant.colorId || !newVariant.sizeId || isSubmitting}
-                    >
-                      {isSubmitting && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                      {!isSubmitting && <Check className="h-4 w-4 mr-1" />}
-                      CONFIRMAR
-                    </Button>
-                  </div>
                 </div>
 
                 {selectedColor && selectedSize && previewSkuBase && (
@@ -364,6 +343,75 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     SKU: {generateSku(initialData.name, selectedColor.name, selectedSize.name)}
                   </p>
                 )}
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Stock por punto de venta</Label>
+                  <div className="rounded-lg border">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-gray-50">
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Punto de Venta</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Depósito</th>
+                          <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 w-24">Stock</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {pointsOfSale.map((pos) => {
+                          const depositosDePos = depositos.filter((d) => d.pointOfSaleId === pos.id);
+                          return (
+                            <tr key={pos.id} className="hover:bg-gray-50">
+                              <td className="px-3 py-2 text-sm font-medium">{pos.label}</td>
+                              <td className="px-3 py-2">
+                                <select
+                                  className="h-8 w-full rounded border border-input bg-background px-2 text-xs"
+                                  value={posDepositos[pos.id] ?? ''}
+                                  onClick={() => handlePosDepositoClick(pos.id)}
+                                  onChange={(e) =>
+                                    setPosDepositos((prev) => ({
+                                      ...prev,
+                                      [pos.id]: e.target.value,
+                                    }))
+                                  }
+                                >
+                                  <option value="">Sin depósito</option>
+                                  {depositosDePos.map((dep) => (
+                                    <option key={dep.id} value={dep.id}>{dep.label}</option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td className="px-3 py-2">
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  className="h-8 text-right"
+                                  value={posStocks[pos.id] ?? 0}
+                                  onChange={(e) =>
+                                    setPosStocks((prev) => ({
+                                      ...prev,
+                                      [pos.id]: Math.max(0, parseInt(e.target.value) || 0),
+                                    }))
+                                  }
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    onClick={handleAddVariant}
+                    disabled={!newVariant.colorId || !newVariant.sizeId || isSubmitting}
+                  >
+                    {isSubmitting && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                    {!isSubmitting && <Check className="h-4 w-4 mr-1" />}
+                    CONFIRMAR
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -373,99 +421,119 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   Este producto no tiene variantes aún.
                 </p>
               ) : (
-                initialData.variants.map((variant) => (
-                  <div
-                    key={variant.id}
-                    className="flex items-center justify-between rounded-lg border px-4 py-3"
-                  >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <Badge variant="secondary" className="font-mono shrink-0">
-                        {variant.sku}
-                      </Badge>
-                      <span className="text-sm text-gray-600 truncate">
-                        {variant.color.label} — {variant.size.label}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <div className="text-right">
-                        <span className="text-xs text-gray-400 block">Stock</span>
-                        {editingStockId === variant.id ? (
-                          <div className="flex items-center gap-1">
-                            <Input
-                              type="number"
-                              min={0}
-                              className="h-8 w-20 text-right font-bold text-base"
-                              value={editingStockValue}
-                              onChange={(e) =>
-                                setEditingStockValue(parseInt(e.target.value) || 0)
-                              }
-                              autoFocus
-                            />
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-green-600"
-                              onClick={() => handleSaveStock(variant.id)}
-                              disabled={isSubmitting}
-                            >
-                              {isSubmitting ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Check className="h-4 w-4" />
-                              )}
+                initialData.variants.map((variant) => {
+                  const isEditing = editingVariant === variant.id;
+                  const currentStocks = editStocks[variant.id] ?? {};
+                  const currentDepos = editDepositos[variant.id] ?? {};
+
+                  return (
+                    <div key={variant.id}>
+                      <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+                        <div className="flex items-center gap-4 min-w-0">
+                          <Badge variant="secondary" className="font-mono shrink-0">
+                            {variant.sku}
+                          </Badge>
+                          <span className="text-sm text-gray-600 truncate">
+                            {variant.color.label} — {variant.size.label}
+                          </span>
+                          <Badge variant="outline" className="shrink-0">
+                            Stock: {variant.stock}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleEditStock(variant.id)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500"
+                            onClick={() => handleDeleteVariant(variant.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {isEditing && (
+                        <div className="rounded-lg border border-t-0 bg-gray-50 p-4 space-y-3">
+                          <p className="text-xs font-semibold text-gray-600">Stock por punto de venta</p>
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-500">Punto de Venta</th>
+                                <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-500">Depósito</th>
+                                <th className="px-3 py-1.5 text-right text-xs font-medium text-gray-500 w-24">Stock</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                              {pointsOfSale.map((pos) => {
+                                const deposDePos = depositos.filter((d) => d.pointOfSaleId === pos.id);
+                                return (
+                                  <tr key={pos.id} className="hover:bg-gray-100">
+                                    <td className="px-3 py-1.5 text-sm font-medium">{pos.label}</td>
+                                    <td className="px-3 py-1.5">
+                                      <select
+                                        className="h-7 w-full rounded border border-input bg-white px-2 text-xs"
+                                        value={currentDepos[pos.id] ?? ''}
+                                        onClick={() => handlePosDepositoClick(pos.id)}
+                                        onChange={(e) =>
+                                          setEditDepositos((prev) => ({
+                                            ...prev,
+                                            [variant.id]: {
+                                              ...(prev[variant.id] ?? {}),
+                                              [pos.id]: e.target.value,
+                                            },
+                                          }))
+                                        }
+                                      >
+                                        <option value="">Sin depósito</option>
+                                        {deposDePos.map((dep) => (
+                                          <option key={dep.id} value={dep.id}>{dep.label}</option>
+                                        ))}
+                                      </select>
+                                    </td>
+                                    <td className="px-3 py-1.5">
+                                      <Input
+                                        type="number"
+                                        min={0}
+                                        className="h-7 text-right bg-white"
+                                        value={currentStocks[pos.id] ?? 0}
+                                        onChange={(e) =>
+                                          setEditStocks((prev) => ({
+                                            ...prev,
+                                            [variant.id]: {
+                                              ...(prev[variant.id] ?? {}),
+                                              [pos.id]: Math.max(0, parseInt(e.target.value) || 0),
+                                            },
+                                          }))
+                                        }
+                                      />
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                          <div className="flex justify-end gap-2">
+                            <Button size="sm" variant="outline" onClick={() => setEditingVariant(null)}>
+                              Cancelar
                             </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8"
-                              onClick={handleCancelEditStock}
-                            >
-                              <X className="h-4 w-4" />
+                            <Button size="sm" onClick={() => handleSaveStock(variant.id)}>
+                              <Save className="h-3.5 w-3.5 mr-1" />
+                              Guardar Stock
                             </Button>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-2 justify-end">
-                            <span
-                              className={`text-lg font-bold ${
-                                variant.stock === 0
-                                  ? 'text-red-600'
-                                  :                                   variant.stock < 3
-                                  ? 'text-amber-600'
-                                  : 'text-green-600'
-                              }`}
-                            >
-                              {variant.stock}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() =>
-                                handleEditStock(variant.id, variant.stock)
-                              }
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                      <div className="hidden sm:block">
-                        <StockBadge stock={variant.stock} />
-                      </div>
-                      <span className="hidden md:block text-xs text-gray-400">
-                        {formatDate(variant.updatedAt)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-500 shrink-0"
-                        onClick={() => handleDeleteVariant(variant.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </CardContent>

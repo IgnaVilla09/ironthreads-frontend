@@ -19,46 +19,89 @@ export interface Product {
   description: string | null;
   categoryId: string;
   category: CategoryOption;
-  pointOfSaleId: string;
-  pointOfSale: PointOfSaleOption;
-  depositoId: string | null;
-  deposito: DepositoOption | null;
   createdAt: string;
   updatedAt: string;
   variants: ProductVariant[];
+}
+
+export interface InventoryItem {
+  id: string;
+  variantId: string;
+  pointOfSaleId: string;
+  depositoId: string | null;
+  stock: number;
+  variant: ProductVariant;
+  pointOfSale: PointOfSaleOption;
+  deposito: DepositoOption | null;
+}
+
+export interface InventoryItemSummary {
+  pointOfSaleId: string;
+  pointOfSale: PointOfSaleOption;
+  deposito: DepositoOption | null;
+  stock: number;
 }
 
 export interface CreateProductInput {
   name: string;
   description?: string;
   categoryId: string;
-  pointOfSaleId: string;
-  depositoId?: string;
 }
 
 export interface UpdateProductInput {
   name?: string;
   description?: string;
   categoryId?: string;
-  pointOfSaleId?: string;
-  depositoId?: string | null;
+}
+
+export interface InventoryAllocation {
+  pointOfSaleId: string;
+  depositoId?: string;
+  stock: number;
 }
 
 export interface CreateVariantInput {
   colorId: string;
   sizeId: string;
-  stock: number;
+  inventory?: InventoryAllocation[];
 }
 
 export interface UpdateVariantInput {
   colorId?: string;
   sizeId?: string;
-  stock?: number;
 }
 
 export interface ProductFilters {
   categoryId?: string;
-  pointOfSaleId?: string;
-  depositoId?: string;
   search?: string;
+}
+
+export interface StockTransfer {
+  id: string;
+  variantId: string;
+  fromPointOfSaleId: string;
+  fromDepositoId: string | null;
+  toPointOfSaleId: string;
+  toDepositoId: string | null;
+  quantity: number;
+  createdAt: string;
+  variant: {
+    sku: string;
+    product: { id: string; name: string };
+    color: { id: string; name: string; label: string; hex: string | null };
+    size: { id: string; name: string; label: string };
+  };
+  fromPointOfSale: PointOfSaleOption;
+  fromDeposito: DepositoOption | null;
+  toPointOfSale: PointOfSaleOption;
+  toDeposito: DepositoOption | null;
+}
+
+export interface CreateTransferInput {
+  variantId: string;
+  fromPointOfSaleId: string;
+  fromDepositoId?: string;
+  toPointOfSaleId: string;
+  toDepositoId?: string;
+  quantity: number;
 }

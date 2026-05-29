@@ -46,19 +46,19 @@ export default function ProductosPage() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/inventory/export`);
+      const res = await fetch(`${API_BASE}/api/v1/inventory/export-by-pos`);
       if (!res.ok) throw new Error('Error al exportar');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `inventario-${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.download = `inventario-por-punto-de-venta-${new Date().toISOString().split('T')[0]}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch {
-      alert('Error al exportar el inventario');
+      alert('Error al exportar el inventario por punto de venta');
     } finally {
       setIsExporting(false);
     }

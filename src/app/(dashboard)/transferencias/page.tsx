@@ -16,8 +16,10 @@ import { useInventoryStore } from '@/stores/inventory-store';
 import { apiClient } from '@/lib/api-client';
 import { useToastStore } from '@/stores/toast-store';
 import { Product, ProductVariant, StockTransfer } from '@/types/product';
-import { ArrowLeftRight, Package, Search, Loader2, Check } from 'lucide-react';
+import { ArrowLeftRight, Package, Search, Loader2, Check, Download } from 'lucide-react';
 import { formatDate } from '@/lib/formatters';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function TransferenciasPage() {
   return (
@@ -137,6 +139,41 @@ function TransferenciasContent() {
 
   const canTransfer = selectedVariant && fromPos && toPos && quantity > 0 && fromPos !== toPos;
 
+  const handleClear = () => {
+    setProductSearch('');
+    setProducts([]);
+    setSelectedProduct(null);
+    setSelectedVariant('');
+    setFromPos('');
+    setFromDeposito('');
+    setToPos('');
+    setToDeposito('');
+    setQuantity(1);
+  };
+
+  const [isExportingTransfers, setIsExportingTransfers] = useState(false);
+
+  const handleExportTransfers = async () => {
+    setIsExportingTransfers(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/inventory/transfers/export`);
+      if (!res.ok) throw new Error('Error al exportar');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transferencias-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      addToast('Error al exportar el historial de transferencias', 'error');
+    } finally {
+      setIsExportingTransfers(false);
+    }
+  };
+
   return (
     <PageContainer>
       <PageHeader
@@ -193,6 +230,9 @@ function TransferenciasContent() {
                           <div className="min-w-0">
                             <p className="font-medium truncate">{product.name}</p>
                             <p className="text-xs text-gray-500">{product.category.label}</p>
+                            {product.description && (
+                              <p className="text-xs text-gray-400 truncate mt-0.5">{product.description}</p>
+                            )}
                           </div>
                         </button>
                       ))}
@@ -277,25 +317,51 @@ function TransferenciasContent() {
                 </p>
               )}
 
-              <Button
-                className="w-full gap-2"
-                disabled={!canTransfer || isSubmitting}
-                onClick={handleSubmit}
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ArrowLeftRight className="h-4 w-4" />
-                )}
-                {isSubmitting ? 'Transfiriendo...' : 'Transferir Stock'}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 gap-2"
+                  disabled={!canTransfer || isSubmitting}
+                  onClick={handleSubmit}
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArrowLeftRight className="h-4 w-4" />
+                  )}
+                  {isSubmitting ? 'Transfiriendo...' : 'Transferir Stock'}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleClear}
+                  disabled={isSubmitting}
+                >
+                  Limpiar
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Historial de Transferencias</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Historial de Transferencias</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={handleExportTransfers}
+                disabled={isExportingTransfers}
+              >
+                {isExportingTransfers ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {isExportingTransfers ? 'Exportando...' : 'Exportar Excel'}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (

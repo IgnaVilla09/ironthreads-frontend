@@ -32,7 +32,7 @@ interface CartItem {
 
 export default function VentasPage() {
   const addToast = useToastStore((s) => s.addToast);
-  const { colors, sizes, pointsOfSale, depositos, fetchAll, fetchDepositos } = useSettingsStore();
+  const { colors, sizes, pointsOfSale, fetchAll } = useSettingsStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
@@ -48,7 +48,6 @@ export default function VentasPage() {
   const [verificationResult, setVerificationResult] = useState<StockVerificationItem | null>(null);
 
   const [selectedPos, setSelectedPos] = useState('');
-  const [selectedDeposito, setSelectedDeposito] = useState('');
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [observaciones, setObservaciones] = useState('');
@@ -58,16 +57,6 @@ export default function VentasPage() {
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
-
-  useEffect(() => {
-    if (selectedPos) {
-      fetchDepositos(selectedPos);
-    }
-  }, [selectedPos, fetchDepositos]);
-
-  const filteredDepositos = depositos.filter(
-    (d) => d.pointOfSaleId === selectedPos
-  );
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -159,7 +148,6 @@ export default function VentasPage() {
       const res = await apiClient.post<StockVerificationItem[]>('/api/v1/ventas/verify-stock', {
         items: [{ variantId: selectedVariant.id, quantity }],
         pointOfSaleId: selectedPos || undefined,
-        depositoId: selectedDeposito || undefined,
       });
       if (res.data && res.data.length > 0) {
         setVerificationResult(res.data[0]);
@@ -236,7 +224,6 @@ export default function VentasPage() {
         })),
         paymentMethod,
         pointOfSaleId: selectedPos,
-        depositoId: selectedDeposito || undefined,
         observaciones: observaciones.trim() || undefined,
       });
       addToast('Venta registrada correctamente', 'success');
@@ -269,29 +256,16 @@ export default function VentasPage() {
         </Link>
       </PageHeader>
 
-      <div className="mb-4 grid gap-4 sm:grid-cols-2">
+      <div className="mb-4">
         <div className="space-y-2">
           <label className="text-sm font-medium flex items-center gap-1">
             <MapPin className="h-4 w-4" /> Punto de Venta
           </label>
           <Select
             value={selectedPos}
-            onChange={(e) => {
-              setSelectedPos(e.target.value);
-              setSelectedDeposito('');
-            }}
+            onChange={(e) => setSelectedPos(e.target.value)}
             options={pointsOfSale.map((p) => ({ value: p.id, label: p.label }))}
             placeholder="Seleccionar punto de venta"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Depósito (opcional)</label>
-          <Select
-            value={selectedDeposito}
-            onChange={(e) => setSelectedDeposito(e.target.value)}
-            options={filteredDepositos.map((d) => ({ value: d.id, label: d.label }))}
-            placeholder={selectedPos ? 'Todos los depósitos' : 'Primero eligé un punto de venta'}
-            disabled={!selectedPos}
           />
         </div>
       </div>
@@ -627,7 +601,6 @@ export default function VentasPage() {
                         <span className="text-gray-600">Ubicación:</span>
                         <span className="font-medium">
                           {pointsOfSale.find((p) => p.id === selectedPos)?.label}
-                          {selectedDeposito && ` / ${depositos.find((d) => d.id === selectedDeposito)?.label}`}
                         </span>
                       </div>
                     )}

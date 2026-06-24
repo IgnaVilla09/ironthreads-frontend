@@ -12,3 +12,11 @@ export function formatDate(dateString: string): string {
 export function formatNumber(n: number): string {
   return new Intl.NumberFormat('es-AR').format(n);
 }
+
+export function formatCurrency(n: number): string {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0,
+  }).format(n);
+}

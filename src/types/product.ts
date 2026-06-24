@@ -18,6 +18,8 @@ export interface Product {
   name: string;
   description: string | null;
   categoryId: string;
+  imageUrl: string | null;
+  price: number | null;
   category: CategoryOption;
   createdAt: string;
   updatedAt: string;
@@ -46,12 +48,16 @@ export interface CreateProductInput {
   name: string;
   description?: string;
   categoryId: string;
+  imageUrl?: string;
+  price?: number;
 }
 
 export interface UpdateProductInput {
   name?: string;
   description?: string;
   categoryId?: string;
+  imageUrl?: string | null;
+  price?: number | null;
 }
 
 export interface InventoryAllocation {

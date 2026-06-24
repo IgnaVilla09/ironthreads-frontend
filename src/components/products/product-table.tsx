@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Product } from '@/types/product';
-import { formatDate } from '@/lib/formatters';
+import { formatCurrency, formatDate } from '@/lib/formatters';
 import { Pencil, Trash2, Eye, Package, ArrowLeftRight } from 'lucide-react';
 import { useProductStore } from '@/stores/product-store';
 import { useToastStore } from '@/stores/toast-store';
@@ -76,6 +76,12 @@ export function ProductTable({ products, pagination }: ProductTableProps) {
                             {product.description}
                           </p>
                         )}
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                          <span>
+                            {product.price != null ? formatCurrency(product.price) : 'Sin precio catálogo'}
+                          </span>
+                          <span>{product.imageUrl ? 'Con imagen' : 'Sin imagen'}</span>
+                        </div>
                       </div>
                     </div>
                   </TableCell>

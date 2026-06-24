@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, Trash2, Pencil, Check, X, Save } from 'lucide-react';
+import Image from 'next/image';
+import { Loader2, Plus, Trash2, Pencil, Check, X, Save, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,7 +24,8 @@ import { useSettingsStore } from '@/stores/settings-store';
 import { useInventoryStore } from '@/stores/inventory-store';
 import { useToastStore } from '@/stores/toast-store';
 import { Product, CreateVariantInput, InventoryAllocation, InventoryItem } from '@/types/product';
-import { formatDate } from '@/lib/formatters';
+import { formatCurrency, formatDate } from '@/lib/formatters';
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
 
 interface ProductFormProps {
   initialData?: Product;
@@ -56,6 +58,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const [posStocks, setPosStocks] = useState<Record<string, number>>({});
   const [posDepositos, setPosDepositos] = useState<Record<string, string>>({});
   const [editingVariant, setEditingVariant] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [editStocks, setEditStocks] = useState<Record<string, Record<string, number>>>({});
   const [editDepositos, setEditDepositos] = useState<Record<string, Record<string, string>>>({});
   const [variantInventory, setVariantInventoryState] = useState<Record<string, InventoryItem[]>>({});
@@ -89,6 +92,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CreateProductFormData>({
     resolver: zodResolver(createProductSchema),
@@ -97,11 +101,15 @@ export function ProductForm({ initialData }: ProductFormProps) {
           name: initialData.name,
           description: initialData.description ?? '',
           categoryId: initialData.categoryId,
+          imageUrl: initialData.imageUrl ?? '',
+          price: initialData.price ?? undefined,
         }
-      : { name: '', description: '', categoryId: '' },
+      : { name: '', description: '', categoryId: '', imageUrl: '' },
   });
 
   const name = watch('name');
+  const imageUrl = watch('imageUrl');
+  const price = watch('price');
 
   const previewSkuBase = name
     ? name.toUpperCase().trim().replace(/\s+/g, '').replace(/[^A-Z0-9]/g, '').slice(0, 10)
@@ -110,13 +118,62 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const selectedColor = colors.find((c) => c.id === newVariant.colorId);
   const selectedSize = sizes.find((s) => s.id === newVariant.sizeId);
 
+  const handleUploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      addToast('Faltan las variables de Supabase para subir imágenes', 'error');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      addToast('Seleccioná un archivo de imagen válido', 'error');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('La imagen no puede superar los 5 MB', 'error');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+      const path = `products/${crypto.randomUUID()}-${safeName}`;
+      const { error } = await supabase.storage
+        .from('product-images')
+        .upload(path, file, { upsert: false, cacheControl: '3600' });
+
+      if (error) {
+        throw error;
+      }
+
+      const { data } = supabase.storage.from('product-images').getPublicUrl(path);
+      setValue('imageUrl', data.publicUrl, { shouldDirty: true, shouldValidate: true });
+      addToast('Imagen subida correctamente', 'success');
+    } catch {
+      addToast('No se pudo subir la imagen', 'error');
+    } finally {
+      setIsUploadingImage(false);
+      event.target.value = '';
+    }
+  };
+
   const onSubmit = async (data: CreateProductFormData) => {
+    const normalizedPrice = typeof data.price === 'number' && Number.isFinite(data.price)
+      ? data.price
+      : undefined;
+
     try {
       if (initialData) {
         await updateProduct(initialData.id, {
           name: data.name,
           description: data.description || undefined,
           categoryId: data.categoryId,
+          imageUrl: data.imageUrl?.trim() || null,
+          price: normalizedPrice ?? null,
         });
         addToast('Producto actualizado correctamente', 'success');
       } else {
@@ -124,6 +181,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
           name: data.name,
           description: data.description || undefined,
           categoryId: data.categoryId,
+          imageUrl: data.imageUrl?.trim() || undefined,
+          price: normalizedPrice,
         });
         if (newVariant.colorId && newVariant.sizeId) {
           const inventory = buildInventoryAllocations();
@@ -259,6 +318,81 @@ export function ProductForm({ initialData }: ProductFormProps) {
               </select>
               {errors.categoryId && (
                 <p className="text-sm text-red-500">{errors.categoryId.message}</p>
+              )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="price">Precio catálogo</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  min="0"
+                  placeholder="Ej: 25000"
+                  {...register('price', {
+                    setValueAs: (value) => value === '' ? undefined : Number(value),
+                  })}
+                />
+                <p className="text-xs text-gray-500">
+                  {typeof price === 'number' && !Number.isNaN(price)
+                    ? formatCurrency(price)
+                    : 'Este precio solo se usa en el catálogo web.'}
+                </p>
+                {errors.price && (
+                  <p className="text-sm text-red-500">{errors.price.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="imageUrl">Imagen del catálogo</Label>
+                <Input
+                  id="imageUrl"
+                  placeholder="https://..."
+                  {...register('imageUrl')}
+                />
+                {errors.imageUrl && (
+                  <p className="text-sm text-red-500">{errors.imageUrl.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-lg border border-dashed p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium">Imagen del catálogo</p>
+                  <p className="text-xs text-gray-500">
+                    Se sube al bucket público `product-images` de Supabase Storage.
+                  </p>
+                </div>
+                <Label
+                  htmlFor="product-image-file"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium"
+                >
+                  {isUploadingImage ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ImagePlus className="h-4 w-4" />
+                  )}
+                  {isUploadingImage ? 'Subiendo...' : 'Subir imagen'}
+                </Label>
+                <input
+                  id="product-image-file"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleUploadImage}
+                  disabled={isUploadingImage}
+                />
+              </div>
+
+              {imageUrl ? (
+                <div className="relative h-48 w-full overflow-hidden rounded-xl border bg-gray-50 sm:w-48">
+                  <Image src={imageUrl} alt={name || 'Vista previa'} fill className="object-cover" unoptimized />
+                </div>
+              ) : (
+                <div className="flex h-32 items-center justify-center rounded-xl border bg-gray-50 text-sm text-gray-500">
+                  Sin imagen cargada
+                </div>
               )}
             </div>
 

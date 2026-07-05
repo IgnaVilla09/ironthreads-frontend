@@ -13,29 +13,18 @@ export interface ColorDistribution {
   hex: string | null;
 }
 
-export interface LowStockVariant {
+export interface LowStockProduct {
   id: string;
-  sku: string;
-  stock: number;
-  color: {
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  price: number | null;
+  totalStock: number;
+  variantsCount: number;
+  category: {
     id: string;
     name: string;
     label: string;
-    hex: string | null;
-  };
-  size: {
-    id: string;
-    name: string;
-    label: string;
-  };
-  product: {
-    id: string;
-    name: string;
-    category: {
-      id: string;
-      name: string;
-      label: string;
-    };
   };
 }
 

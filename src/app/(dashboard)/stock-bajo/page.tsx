@@ -89,7 +89,9 @@ function normalizeLowStockProducts(data: unknown): LowStockProduct[] {
     });
 
     return acc;
-  }, []).sort((a, b) => a.totalStock - b.totalStock || a.name.localeCompare(b.name));
+  }, [])
+    .filter((product) => product.totalStock <= 5)
+    .sort((a, b) => a.totalStock - b.totalStock || a.name.localeCompare(b.name));
 }
 
 export default function StockBajoPage() {

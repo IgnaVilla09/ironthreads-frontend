@@ -13,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { apiClient } from '@/lib/api-client';
 import { formatCurrency, formatNumber } from '@/lib/formatters';
 import { LowStockProduct } from '@/types/analytics';
+import { Product } from '@/types/product';
 
 type LegacyLowStockItem = {
   stock?: number;
@@ -94,6 +95,42 @@ function normalizeLowStockProducts(data: unknown): LowStockProduct[] {
     .sort((a, b) => a.totalStock - b.totalStock || a.name.localeCompare(b.name));
 }
 
+async function hydrateProducts(products: LowStockProduct[]) {
+  const needsHydration = products.some(
+    (product) => product.category.label === 'Sin categoria' || product.variantsCount === 0
+  );
+
+  if (!needsHydration) {
+    return products;
+  }
+
+  const detailedProducts = await Promise.all(
+    products.map(async (product) => {
+      try {
+        const response = await apiClient.get<Product>(`/api/v1/products/${product.id}`);
+        const detailedProduct = response.data;
+
+        if (!detailedProduct) {
+          return product;
+        }
+
+        return {
+          ...product,
+          description: detailedProduct.description,
+          imageUrl: detailedProduct.imageUrl,
+          price: detailedProduct.price,
+          category: detailedProduct.category,
+          variantsCount: detailedProduct.variants.length,
+        };
+      } catch {
+        return product;
+      }
+    })
+  );
+
+  return detailedProducts;
+}
+
 export default function StockBajoPage() {
   const [products, setProducts] = useState<LowStockProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,7 +143,9 @@ export default function StockBajoPage() {
         setIsError(false);
 
         const response = await apiClient.get<unknown>('/api/v1/analytics/low-stock');
-        setProducts(normalizeLowStockProducts(response.data));
+        const normalizedProducts = normalizeLowStockProducts(response.data);
+        const hydratedProducts = await hydrateProducts(normalizedProducts);
+        setProducts(hydratedProducts);
       } catch {
         setIsError(true);
       } finally {

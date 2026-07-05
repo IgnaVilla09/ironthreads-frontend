@@ -14,6 +14,84 @@ import { apiClient } from '@/lib/api-client';
 import { formatCurrency, formatNumber } from '@/lib/formatters';
 import { LowStockProduct } from '@/types/analytics';
 
+type LegacyLowStockItem = {
+  stock?: number;
+  variant?: {
+    product?: {
+      id?: string;
+      name?: string;
+      category?: {
+        id?: string;
+        name?: string;
+        label?: string;
+      };
+    };
+  };
+};
+
+function normalizeLowStockProducts(data: unknown): LowStockProduct[] {
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.reduce<LowStockProduct[]>((acc, item) => {
+    if (!item || typeof item !== 'object') {
+      return acc;
+    }
+
+    const product = item as Partial<LowStockProduct>;
+
+    if (typeof product.id === 'string' && typeof product.name === 'string') {
+      acc.push({
+        id: product.id,
+        name: product.name,
+        description: product.description ?? null,
+        imageUrl: product.imageUrl ?? null,
+        price: product.price ?? null,
+        totalStock: typeof product.totalStock === 'number' ? product.totalStock : 0,
+        variantsCount: typeof product.variantsCount === 'number' ? product.variantsCount : 0,
+        category: {
+          id: product.category?.id ?? 'unknown',
+          name: product.category?.name ?? 'unknown',
+          label: product.category?.label ?? 'Sin categoria',
+        },
+      });
+      return acc;
+    }
+
+    const legacyItem = item as LegacyLowStockItem;
+    const legacyProduct = legacyItem.variant?.product;
+
+    if (!legacyProduct?.id || !legacyProduct.name) {
+      return acc;
+    }
+
+    const existing = acc.find((entry) => entry.id === legacyProduct.id);
+
+    if (existing) {
+      existing.totalStock += typeof legacyItem.stock === 'number' ? legacyItem.stock : 0;
+      return acc;
+    }
+
+    acc.push({
+      id: legacyProduct.id,
+      name: legacyProduct.name,
+      description: null,
+      imageUrl: null,
+      price: null,
+      totalStock: typeof legacyItem.stock === 'number' ? legacyItem.stock : 0,
+      variantsCount: 0,
+      category: {
+        id: legacyProduct.category?.id ?? 'unknown',
+        name: legacyProduct.category?.name ?? 'unknown',
+        label: legacyProduct.category?.label ?? 'Sin categoria',
+      },
+    });
+
+    return acc;
+  }, []).sort((a, b) => a.totalStock - b.totalStock || a.name.localeCompare(b.name));
+}
+
 export default function StockBajoPage() {
   const [products, setProducts] = useState<LowStockProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,8 +103,8 @@ export default function StockBajoPage() {
         setIsLoading(true);
         setIsError(false);
 
-        const response = await apiClient.get<LowStockProduct[]>('/api/v1/analytics/low-stock');
-        setProducts(response.data ?? []);
+        const response = await apiClient.get<unknown>('/api/v1/analytics/low-stock');
+        setProducts(normalizeLowStockProducts(response.data));
       } catch {
         setIsError(true);
       } finally {

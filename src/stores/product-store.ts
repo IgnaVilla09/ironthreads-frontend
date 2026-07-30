@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import {
   Product,
   ProductFilters,
@@ -38,40 +39,42 @@ interface ProductState {
   resetSelectedProduct: () => void;
 }
 
-export const useProductStore = create<ProductState>((set, get) => ({
-  products: [],
-  selectedProduct: null,
-  filters: {},
-  searchQuery: '',
-  pagination: null,
-  isLoading: false,
-  isError: false,
-  errorMessage: null,
-  isSubmitting: false,
+export const useProductStore = create<ProductState>()(
+  persist(
+    (set, get) => ({
+      products: [],
+      selectedProduct: null,
+      filters: {},
+      searchQuery: '',
+      pagination: null,
+      isLoading: false,
+      isError: false,
+      errorMessage: null,
+      isSubmitting: false,
 
-  fetchProducts: async (page = 1) => {
-    set({ isLoading: true, isError: false, errorMessage: null });
-    try {
-      const { filters, searchQuery } = get();
-      const response = await apiClient.get<Product[]>('/api/v1/products', {
-        ...filters,
-        search: searchQuery || undefined,
-        page,
-        limit: 8,
-      });
-      set({
-        products: response.data ?? [],
-        pagination: response.meta ?? null,
-        isLoading: false,
-      });
-    } catch (error) {
-      set({
-        isError: true,
-        errorMessage: error instanceof Error ? error.message : 'Error al cargar productos',
-        isLoading: false,
-      });
-    }
-  },
+      fetchProducts: async (page = 1) => {
+        set({ isLoading: true, isError: false, errorMessage: null });
+        try {
+          const { filters, searchQuery } = get();
+          const response = await apiClient.get<Product[]>('/api/v1/products', {
+            ...filters,
+            search: searchQuery || undefined,
+            page,
+            limit: 8,
+          });
+          set({
+            products: response.data ?? [],
+            pagination: response.meta ?? null,
+            isLoading: false,
+          });
+        } catch (error) {
+          set({
+            isError: true,
+            errorMessage: error instanceof Error ? error.message : 'Error al cargar productos',
+            isLoading: false,
+          });
+        }
+      },
 
   fetchProduct: async (id: string) => {
     set({ isLoading: true, isError: false, errorMessage: null });
@@ -251,4 +254,13 @@ export const useProductStore = create<ProductState>((set, get) => ({
   resetSelectedProduct: () => {
     set({ selectedProduct: null });
   },
-}));
+}),
+    {
+      name: 'product-store',
+      partialize: (state) => ({
+        filters: state.filters,
+        searchQuery: state.searchQuery,
+      }),
+    }
+  )
+);

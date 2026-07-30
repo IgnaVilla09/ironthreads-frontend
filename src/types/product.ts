@@ -80,6 +80,7 @@ export interface UpdateVariantInput {
 export interface ProductFilters {
   categoryId?: string;
   search?: string;
+  pointOfSaleId?: string;
 }
 
 export interface StockTransfer {

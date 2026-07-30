@@ -8,11 +8,14 @@ import { RotateCcw } from 'lucide-react';
 
 export function ProductFilters() {
   const { filters, setFilters, clearFilters } = useProductStore();
-  const { categories, fetchCategories } = useSettingsStore();
+  const { categories, fetchCategories, pointsOfSale, fetchPointsOfSale } = useSettingsStore();
 
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+    fetchPointsOfSale();
+  }, [fetchCategories, fetchPointsOfSale]);
+
+  const hasAnyFilter = filters.categoryId || filters.pointOfSaleId;
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -33,7 +36,24 @@ export function ProductFilters() {
         ))}
       </select>
 
-      {filters.categoryId && (
+      <select
+        className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+        value={filters.pointOfSaleId ?? ''}
+        onChange={(e) =>
+          setFilters({
+            pointOfSaleId: e.target.value || undefined,
+          })
+        }
+      >
+        <option value="">Todos los puntos de venta</option>
+        {pointsOfSale.map((pos) => (
+          <option key={pos.id || pos.name} value={pos.id}>
+            {pos.label}
+          </option>
+        ))}
+      </select>
+
+      {hasAnyFilter && (
         <Button variant="ghost" size="sm" className="gap-1" onClick={clearFilters}>
           <RotateCcw className="h-3 w-3" />
           Limpiar

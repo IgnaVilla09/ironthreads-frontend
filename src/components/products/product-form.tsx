@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Loader2, Plus, Trash2, Pencil, Check, X, Save, ImagePlus } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, Check, X, Save, ImagePlus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,6 +58,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const [posStocks, setPosStocks] = useState<Record<string, number>>({});
   const [posDepositos, setPosDepositos] = useState<Record<string, string>>({});
   const [editingVariant, setEditingVariant] = useState<string | null>(null);
+  const [loadingVariantId, setLoadingVariantId] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [editStocks, setEditStocks] = useState<Record<string, Record<string, number>>>({});
   const [editDepositos, setEditDepositos] = useState<Record<string, Record<string, string>>>({});
@@ -232,11 +233,23 @@ export function ProductForm({ initialData }: ProductFormProps) {
       return;
     }
 
+    setLoadingVariantId(variantId);
+
     let inventory: InventoryItem[] = variantInventory[variantId];
     if (!inventory) {
       inventory = await fetchInventoryByVariant(variantId);
       setVariantInventoryState((prev) => ({ ...prev, [variantId]: inventory }));
     }
+
+    const posIds = [...new Set(inventory.map((inv) => inv.pointOfSaleId))];
+    await Promise.all(
+      posIds.map((posId) => {
+        const hasDepositos = depositos.some((d) => d.pointOfSaleId === posId);
+        if (!hasDepositos) {
+          return fetchDepositos(posId);
+        }
+      })
+    );
 
     const stockMap: Record<string, number> = {};
     const depMap: Record<string, string> = {};
@@ -250,6 +263,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
     setEditStocks((prev) => ({ ...prev, [variantId]: stockMap }));
     setEditDepositos((prev) => ({ ...prev, [variantId]: depMap }));
     setEditingVariant(variantId);
+    setLoadingVariantId(null);
   };
 
   const handleSaveStock = async (variantId: string) => {
@@ -585,8 +599,13 @@ export function ProductForm({ initialData }: ProductFormProps) {
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => handleEditStock(variant.id)}
+                            disabled={loadingVariantId === variant.id}
                           >
-                            <Pencil className="h-4 w-4" />
+                            {loadingVariantId === variant.id ? (
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Pencil className="h-4 w-4" />
+                            )}
                           </Button>
                           <Button
                             variant="ghost"

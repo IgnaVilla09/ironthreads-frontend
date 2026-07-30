@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useProductStore } from '@/stores/product-store';
 import { useInventoryStore } from '@/stores/inventory-store';
 import { InventoryItem } from '@/types/product';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Pencil, Package, Layers, MapPin, ArrowLeftRight } from 'lucide-react';
 
 export default function ProductoPage() {
@@ -21,6 +22,7 @@ export default function ProductoPage() {
   const { selectedProduct, isLoading, isError, fetchProduct, resetSelectedProduct } = useProductStore();
   const { fetchInventoryByVariant } = useInventoryStore();
   const [inventoryMap, setInventoryMap] = useState<Map<string, InventoryItem[]>>(new Map());
+  const [isInventoryLoading, setIsInventoryLoading] = useState(false);
 
   useEffect(() => {
     fetchProduct(id);
@@ -30,12 +32,14 @@ export default function ProductoPage() {
   useEffect(() => {
     if (!selectedProduct) return;
     const loadInventory = async () => {
+      setIsInventoryLoading(true);
+      const results = await Promise.all(
+        selectedProduct.variants.map((v) => fetchInventoryByVariant(v.id))
+      );
       const map = new Map<string, InventoryItem[]>();
-      for (const variant of selectedProduct.variants) {
-        const items = await fetchInventoryByVariant(variant.id);
-        map.set(variant.id, items);
-      }
+      selectedProduct.variants.forEach((v, i) => map.set(v.id, results[i]));
       setInventoryMap(map);
+      setIsInventoryLoading(false);
     };
     loadInventory();
   }, [selectedProduct]);
@@ -133,7 +137,12 @@ export default function ProductoPage() {
                           </span>
                         </td>
                         <td className="px-6 py-3">
-                          {invItems.length === 0 ? (
+                          {isInventoryLoading ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              <Skeleton className="h-6 w-28 rounded-full" />
+                              <Skeleton className="h-6 w-24 rounded-full" />
+                            </div>
+                          ) : invItems.length === 0 ? (
                             <span className="text-xs text-gray-400">Sin stock asignado</span>
                           ) : (
                             <div className="flex flex-wrap gap-1.5">

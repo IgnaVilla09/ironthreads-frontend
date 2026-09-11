@@ -198,8 +198,9 @@ export function ProductForm({ initialData }: ProductFormProps) {
       }
       router.push('/productos');
       router.refresh();
-    } catch {
-      addToast('Error al guardar el producto', 'error');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al guardar el producto';
+      addToast(message, 'error');
     }
   };
 
@@ -212,8 +213,9 @@ export function ProductForm({ initialData }: ProductFormProps) {
       setPosStocks({});
       setPosDepositos({});
       addToast('Variante agregada correctamente', 'success');
-    } catch {
-      addToast('Error al agregar la variante', 'error');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al agregar la variante';
+      addToast(message, 'error');
     }
   };
 
@@ -222,8 +224,9 @@ export function ProductForm({ initialData }: ProductFormProps) {
     try {
       await deleteVariant(initialData!.id, variantId);
       addToast('Variante eliminada correctamente', 'success');
-    } catch {
-      addToast('Error al eliminar la variante', 'error');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al eliminar la variante';
+      addToast(message, 'error');
     }
   };
 

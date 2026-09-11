@@ -37,8 +37,9 @@ export function ProductTable({ products, pagination }: ProductTableProps) {
       await deleteProduct(deleteTarget.id);
       addToast('Producto eliminado correctamente', 'success');
       setDeleteTarget(null);
-    } catch {
-      addToast('Error al eliminar el producto', 'error');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al eliminar el producto';
+      addToast(message, 'error');
     }
   };
 

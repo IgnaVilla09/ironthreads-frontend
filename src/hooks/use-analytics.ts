@@ -26,12 +26,11 @@ export function useAnalytics() {
   useEffect(() => {
     async function fetchAll() {
       try {
-        const [sizeRes, colorRes, bestSellingRes, statsRes] = await Promise.all([
-          apiClient.get<SizeDistribution[]>('/api/v1/analytics/by-size'),
-          apiClient.get<ColorDistribution[]>('/api/v1/analytics/by-color'),
-          apiClient.get<BestSellingSize[]>('/api/v1/analytics/best-selling-sizes'),
-          apiClient.get<GeneralStats>('/api/v1/analytics/general-stats'),
-        ]);
+        // Fetch sequentially instead of Promise.all to avoid exhausting Prisma connection pool
+        const sizeRes = await apiClient.get<SizeDistribution[]>('/api/v1/analytics/by-size');
+        const colorRes = await apiClient.get<ColorDistribution[]>('/api/v1/analytics/by-color');
+        const bestSellingRes = await apiClient.get<BestSellingSize[]>('/api/v1/analytics/best-selling-sizes');
+        const statsRes = await apiClient.get<GeneralStats>('/api/v1/analytics/general-stats');
 
         setState({
           bySize: sizeRes.data ?? [],

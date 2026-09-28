@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { renderChatContent } from '@/lib/chat-content';
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
@@ -66,4 +67,37 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardFooter.displayName = 'CardFooter';
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+const Message = React.forwardRef<HTMLDivElement, { role: 'user' | 'assistant'; content: string }>(
+  ({ role, content }, ref) => {
+    const isError = content.toLowerCase().includes('error');
+    const bubbleClass =
+      role === 'user'
+        ? 'bg-blue-600 text-white'
+        : isError
+          ? 'bg-red-600 text-white'
+          : 'bg-zinc-900 text-white';
+
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          'flex items-start gap-3',
+          role === 'user' ? 'justify-end' : 'justify-start'
+        )}
+      >
+        <div
+          className={cn(
+            'max-w-[80%] px-3.5 py-2 rounded-2xl text-sm shadow [overflow-wrap:anywhere]',
+            bubbleClass,
+            role === 'user' ? 'rounded-br-sm self-end' : 'rounded-bl-sm self-start'
+          )}
+        >
+          {renderChatContent(content)}
+        </div>
+      </div>
+    );
+  }
+);
+Message.displayName = 'Message';
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, Message };

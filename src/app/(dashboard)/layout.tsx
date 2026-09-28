@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { getCurrentSession } from '@/lib/server-auth';
+import { FloatingChatButton } from '@/components/ui/floating-chat-button';
 
 export default async function DashboardLayout({
   children,
@@ -20,6 +21,7 @@ export default async function DashboardLayout({
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header user={session.user} />
         <main className="flex-1 overflow-y-auto">{children}</main>
+        <FloatingChatButton />
       </div>
     </div>
   );

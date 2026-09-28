@@ -107,8 +107,8 @@ export default function ProductoPage() {
               <span className="font-bold">{totalStock} unidades</span>
             </div>
 
-            <div className="rounded-xl border bg-white">
-              <table className="w-full">
+            <div className="overflow-x-auto rounded-xl border bg-white overscroll-x-contain touch-pan-x">
+              <table className="w-full min-w-[780px]">
                 <thead>
                   <tr className="border-b text-left">
                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>

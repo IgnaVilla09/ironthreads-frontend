@@ -502,8 +502,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
 
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold">Stock por punto de venta</Label>
-                  <div className="rounded-lg border">
-                    <table className="w-full text-sm">
+                  <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-pan-x">
+                    <table className="w-full min-w-[520px] text-sm">
                       <thead>
                         <tr className="border-b bg-gray-50">
                           <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Punto de Venta</th>
@@ -624,7 +624,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
                       {isEditing && (
                         <div className="rounded-lg border border-t-0 bg-gray-50 p-4 space-y-3">
                           <p className="text-xs font-semibold text-gray-600">Stock por punto de venta</p>
-                          <table className="w-full text-sm">
+                          <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
+                          <table className="w-full min-w-[520px] text-sm">
                             <thead>
                               <tr className="border-b">
                                 <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-500">Punto de Venta</th>
@@ -681,6 +682,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                               })}
                             </tbody>
                           </table>
+                          </div>
                           <div className="flex justify-end gap-2">
                             <Button size="sm" variant="outline" onClick={() => setEditingVariant(null)}>
                               Cancelar

@@ -369,8 +369,8 @@ function TransferenciasContent() {
             ) : transfers.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-8">No hay transferencias registradas</p>
             ) : (
-              <div className="rounded-xl border">
-                <table className="w-full">
+              <div className="overflow-x-auto rounded-xl border overscroll-x-contain touch-pan-x">
+                <table className="w-full min-w-[800px]">
                   <thead>
                     <tr className="border-b text-left">
                       <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Fecha</th>

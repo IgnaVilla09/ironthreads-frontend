@@ -141,8 +141,8 @@ export default function HistorialVentasPage() {
           ) : sales.length === 0 ? (
             <EmptyState title="No hay ventas registradas" description="Aún no se ha realizado ninguna venta." />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto overscroll-x-contain rounded-lg touch-pan-x">
+              <table className="w-full min-w-[900px] text-sm">
                 <thead>
                   <tr className="border-b bg-gray-50">
                     <th className="px-4 py-3 text-left font-medium text-gray-600">Fecha</th>

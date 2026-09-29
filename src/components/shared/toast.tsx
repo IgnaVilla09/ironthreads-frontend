@@ -21,7 +21,7 @@ export function ToastContainer() {
   const { toasts, removeToast } = useToastStore();
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2">
+    <div role="status" aria-live="polite" aria-relevant="additions" className="fixed bottom-4 right-4 z-[100] flex max-w-[calc(100vw-2rem)] flex-col gap-2">
       {toasts.map((toast) => (
         <ToastItem
           key={toast.id}
@@ -55,15 +55,15 @@ function ToastItem({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg transition-all duration-300',
+        'flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg transition-[transform,opacity] duration-300',
         styles[type],
         visible ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
       )}
     >
       <Icon className="h-5 w-5 shrink-0" />
       <p className="text-sm font-medium">{message}</p>
-      <button onClick={onClose} className="ml-2 shrink-0 opacity-60 hover:opacity-100">
-        <X className="h-4 w-4" />
+      <button type="button" aria-label="Cerrar notificación" onClick={onClose} className="ml-2 shrink-0 rounded-sm p-1 opacity-70 hover:opacity-100">
+        <X className="h-4 w-4" aria-hidden="true" />
       </button>
     </div>
   );

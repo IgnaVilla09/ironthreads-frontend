@@ -21,9 +21,15 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function ProductosPage() {
   const { products, pagination, isLoading, isError, errorMessage, filters, searchQuery, fetchProducts } = useProductStore();
-  const [page, setPage] = useState(1);
+  const [pageSelection, setPageSelection] = useState({ key: '', page: 1 });
+  const filterKey = JSON.stringify([filters.categoryId, filters.pointOfSaleId, filters.search, searchQuery]);
+  const page = pageSelection.key === filterKey ? pageSelection.page : 1;
   const [totalStock, setTotalStock] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    setPageSelection({ key: filterKey, page: 1 });
+  }, [filterKey]);
 
   useEffect(() => {
     apiClient.get<GeneralStats>('/api/v1/analytics/general-stats')
@@ -32,15 +38,11 @@ export default function ProductosPage() {
   }, []);
 
   useEffect(() => {
-    setPage(1);
-  }, [filters, searchQuery]);
-
-  useEffect(() => {
     fetchProducts(page);
-  }, [filters, searchQuery, page]);
+  }, [fetchProducts, filterKey, page]);
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
+    setPageSelection({ key: filterKey, page: newPage });
   };
 
   const handleExport = async () => {
@@ -81,29 +83,29 @@ export default function ProductosPage() {
         title="Productos"
         description="Gestiona tu inventario de productos"
       >
-        <div className="flex gap-2">
+         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="gap-2" onClick={handleExport} disabled={isExporting}>
             {isExporting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Download className="h-4 w-4" />
             )}
-            {isExporting ? 'Exportando...' : 'Exportar Excel'}
+             {isExporting ? 'Exportando…' : 'Exportar inventario'}
           </Button>
-          <Link href="/productos/nuevo">
-            <Button className="gap-2">
+          <Button asChild className="gap-2">
+            <Link href="/productos/nuevo">
               <Plus className="h-4 w-4" />
-              Nuevo Producto
-            </Button>
-          </Link>
+              Nuevo producto
+            </Link>
+          </Button>
         </div>
       </PageHeader>
 
       {totalStock !== null && (
-        <div className="mb-6 flex items-center gap-2 rounded-xl border bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          <Package className="h-4 w-4" />
-          <span className="font-medium">Valor total del inventario:</span>
-          <span className="font-bold">{totalStock} unidades</span>
+        <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-primary/25 bg-accent px-4 py-3 text-sm text-black">
+          <Package className="h-4 w-4 text-primary" aria-hidden="true" />
+          <span className="font-medium">Unidades en inventario</span>
+          <span className="font-bold tabular-nums">{new Intl.NumberFormat('es-AR').format(totalStock)}</span>
         </div>
       )}
 

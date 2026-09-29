@@ -307,9 +307,8 @@ export default function ConfiguracionPage() {
     }
   }
 
-  async function openPosDepositos(pos: PointOfSaleOption) {
+  function openPosDepositos(pos: PointOfSaleOption) {
     setSelectedPosForDepositos(pos);
-    await fetchDepositos(pos.id);
   }
 
   if (isLoading && categories.length === 0) {
@@ -348,7 +347,7 @@ export default function ConfiguracionPage() {
       {activeTab === 'puntos-venta' && (
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500">{pointsOfSale.length} puntos de venta</p>
+            <p className="text-sm text-gray-500">{isLoading ? 'Cargando puntos de venta y depósitos…' : `${pointsOfSale.length} puntos de venta`}</p>
             <Button size="sm" onClick={() => openPosDialog(null)}>
               <Plus className="mr-1 h-4 w-4" />
               Agregar punto de venta
@@ -375,7 +374,7 @@ export default function ConfiguracionPage() {
                       <td className="px-4 py-3">{pos.label}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-500">{posDepositos.length}</span>
+                           <span className="text-sm tabular-nums text-gray-500">{isLoading ? '…' : posDepositos.length}</span>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -391,6 +390,7 @@ export default function ConfiguracionPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={`Editar punto de venta ${pos.label}`}
                             className="h-8 w-8"
                             onClick={() => openPosDialog(pos)}
                           >
@@ -399,6 +399,7 @@ export default function ConfiguracionPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={`Eliminar punto de venta ${pos.label}`}
                             className="h-8 w-8 text-red-500"
                             onClick={() => setPosDelete(pos)}
                           >
@@ -425,14 +426,14 @@ export default function ConfiguracionPage() {
             open={!!selectedPosForDepositos}
             onOpenChange={(open) => { if (!open) setSelectedPosForDepositos(null); }}
           >
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>
+            <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-xl flex-col gap-4 overflow-y-auto p-4 sm:p-6">
+              <DialogHeader className="min-w-0 pr-8">
+                <DialogTitle className="break-words leading-snug">
                   Depósitos — {selectedPosForDepositos?.label}
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 py-2">
-                <div className="flex items-center justify-between">
+              <div className="flex min-h-0 flex-col gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm text-gray-500">
                     {depositos.filter((d) => d.pointOfSaleId === selectedPosForDepositos?.id).length} depósitos
                   </p>
@@ -441,13 +442,13 @@ export default function ConfiguracionPage() {
                     Agregar depósito
                   </Button>
                 </div>
-                <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-pan-x">
-                  <table className="w-full min-w-[500px] text-sm">
+                <div className="max-h-[40dvh] min-h-0 overflow-y-auto overscroll-contain rounded-lg border sm:max-h-96">
+                  <table className="w-full table-fixed text-sm">
                     <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                       <tr>
-                        <th className="px-4 py-3 font-medium">Nombre</th>
-                        <th className="px-4 py-3 font-medium">Etiqueta</th>
-                        <th className="px-4 py-3 text-right font-medium">Acciones</th>
+                        <th className="w-[34%] px-2 py-3 font-medium sm:px-4">Nombre</th>
+                        <th className="px-2 py-3 font-medium sm:px-4">Etiqueta</th>
+                        <th className="w-20 px-2 py-3 text-right font-medium sm:w-24 sm:px-4">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -455,16 +456,17 @@ export default function ConfiguracionPage() {
                         .filter((d) => d.pointOfSaleId === selectedPosForDepositos?.id)
                         .map((dep) => (
                           <tr key={dep.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-mono text-xs font-medium uppercase">
+                            <td className="break-words px-2 py-3 font-mono text-xs font-medium uppercase sm:px-4">
                               {dep.name}
                             </td>
-                            <td className="px-4 py-3">{dep.label}</td>
-                            <td className="px-4 py-3 text-right">
+                            <td className="break-words px-2 py-3 sm:px-4">{dep.label}</td>
+                            <td className="px-2 py-3 text-right sm:px-4">
                               <div className="flex justify-end gap-1">
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
+                                  aria-label={`Editar depósito ${dep.label}`}
+                                  className="h-8 w-8 shrink-0"
                                   onClick={() => openDepositoDialog(dep)}
                                 >
                                   <Pencil className="h-4 w-4" />
@@ -472,7 +474,8 @@ export default function ConfiguracionPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-red-500"
+                                  aria-label={`Eliminar depósito ${dep.label}`}
+                                  className="h-8 w-8 shrink-0 text-red-500"
                                   onClick={() => setDepDelete(dep)}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -583,6 +586,7 @@ export default function ConfiguracionPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Editar color ${color.label}`}
                           className="h-8 w-8"
                           onClick={() => openColorDialog(color)}
                         >
@@ -591,6 +595,7 @@ export default function ConfiguracionPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Eliminar color ${color.label}`}
                           className="h-8 w-8 text-red-500"
                           onClick={() => setColorDelete(color)}
                         >
@@ -644,6 +649,7 @@ export default function ConfiguracionPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Editar talle ${size.label}`}
                           className="h-8 w-8"
                           onClick={() => openSizeDialog(size)}
                         >
@@ -652,6 +658,7 @@ export default function ConfiguracionPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Eliminar talle ${size.label}`}
                           className="h-8 w-8 text-red-500"
                           onClick={() => setSizeDelete(size)}
                         >
@@ -705,6 +712,7 @@ export default function ConfiguracionPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Editar categoría ${cat.label}`}
                           className="h-8 w-8"
                           onClick={() => openCategoryDialog(cat)}
                         >
@@ -713,6 +721,7 @@ export default function ConfiguracionPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Eliminar categoría ${cat.label}`}
                           className="h-8 w-8 text-red-500"
                           onClick={() => setCatDelete(cat)}
                         >

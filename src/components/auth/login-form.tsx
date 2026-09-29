@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Loader2, LockKeyhole } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -45,36 +45,41 @@ export function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-6">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <LockKeyhole className="h-6 w-6" />
-          </div>
-          <CardTitle>Iniciar sesión</CardTitle>
-          <CardDescription>Accede al panel con tu usuario y contraseña.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={onSubmit}>
+    <main id="contenido-principal" className="grid min-h-dvh bg-[#f7f8f8] lg:grid-cols-[minmax(360px,1fr)_minmax(420px,1fr)]">
+      <div className="flex flex-col justify-between bg-black px-7 py-9 text-white sm:px-12 lg:px-16 lg:py-14">
+        <Image src="/assets/logo.png" alt="Ironthreads" width={554} height={139} className="h-auto w-48" priority />
+        <div className="hidden max-w-lg lg:block">
+          <div className="mb-8 h-1 w-16 bg-primary" />
+          <p className="text-5xl font-extrabold leading-[1.05] tracking-[-0.06em] xl:text-6xl">Cada prenda.<br />Cada movimiento.<br />En orden.</p>
+          <p className="mt-6 max-w-sm text-base leading-relaxed text-white/60">El centro de operaciones de tu inventario.</p>
+        </div>
+        <p className="hidden text-xs text-white/45 lg:block">Ironthreads / Gestión de stock</p>
+      </div>
+      <div className="flex items-center justify-center px-6 py-12 sm:px-12 lg:px-16">
+        <div className="w-full max-w-sm">
+          <div className="mb-10 h-1 w-12 bg-primary" />
+          <h1 className="text-4xl font-extrabold tracking-[-0.05em] text-black">Iniciar sesión</h1>
+          <p className="mt-3 text-sm text-gray-600">Ingresá con tu usuario y contraseña para continuar.</p>
+          <form className="mt-9 space-y-5" onSubmit={onSubmit}>
             <div className="space-y-2">
               <Label htmlFor="username">Usuario</Label>
-              <Input id="username" value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" />
+              <Input id="username" name="username" required spellCheck={false} value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" aria-describedby={error ? 'login-error' : undefined} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
-              <Input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" />
+              <Input id="password" name="password" type="password" required value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" aria-describedby={error ? 'login-error' : undefined} />
             </div>
 
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {error ? <p id="login-error" role="alert" className="text-sm text-destructive">{error}</p> : null}
 
             <Button type="submit" className="w-full gap-2" disabled={isLoading}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Ingresar
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+              {isLoading ? 'Ingresando…' : 'Ingresar'}
             </Button>
           </form>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+    </main>
   );
 }

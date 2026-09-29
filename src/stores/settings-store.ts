@@ -115,13 +115,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   fetchAll: async () => {
     set({ isLoading: true });
-    await Promise.all([
-      get().fetchCategories(),
-      get().fetchColors(),
-      get().fetchSizes(),
-      get().fetchPointsOfSale(),
-    ]);
-    set({ isLoading: false });
+    try {
+      await Promise.all([
+        get().fetchCategories(),
+        get().fetchColors(),
+        get().fetchSizes(),
+        (async () => {
+          await get().fetchPointsOfSale();
+          await Promise.all(get().pointsOfSale.map((pos) => get().fetchDepositos(pos.id)));
+        })(),
+      ]);
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   createCategory: async (input) => {

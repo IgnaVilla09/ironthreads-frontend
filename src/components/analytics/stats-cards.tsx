@@ -18,32 +18,25 @@ interface StatsCardsProps {
 
 const statCards = [
   {
-    title: 'Total Productos',
+    title: 'Productos',
     icon: Package,
-    color: 'text-primary',
-    bgColor: 'bg-primary/10',
     getValue: (d: GeneralStats) => d.totalProducts,
   },
   {
-    title: 'Stock Total',
+    title: 'Unidades en stock',
     icon: Layers,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-50',
     getValue: (d: GeneralStats) => d.totalStock,
   },
   {
     title: 'Categorías',
     icon: BarChart3,
-    color: 'text-violet-600',
-    bgColor: 'bg-violet-50',
     getValue: (d: GeneralStats) => d.categoriesCount,
   },
   {
-    title: 'Stock Bajo',
+    title: 'Stock bajo',
     icon: AlertTriangle,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    getValue: (d: GeneralStats) => `${d.lowStockSum} uds. (${d.lowStockPercentage}%)`,
+    getValue: (d: GeneralStats) => d.lowStockSum,
+    getDetail: (d: GeneralStats) => `${d.lowStockPercentage}% del inventario`,
     href: '/stock-bajo',
   },
 ];
@@ -51,9 +44,9 @@ const statCards = [
 export function StatsCards({ data, isLoading }: StatsCardsProps) {
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid overflow-hidden rounded-xl border border-black/10 bg-white sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
+          <Card key={i} className="rounded-none border-0 border-b border-black/10 sm:border-r xl:border-b-0">
             <CardHeader className="pb-2">
               <Skeleton className="h-4 w-24" />
             </CardHeader>
@@ -71,28 +64,25 @@ export function StatsCards({ data, isLoading }: StatsCardsProps) {
   }
 
   return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid overflow-hidden rounded-xl border border-black/10 bg-white sm:grid-cols-2 xl:grid-cols-4">
         {statCards.map((card) => {
           const Icon = card.icon;
           const content = (
-            <Card className={`animate-fade-in-up ${card.href ? 'transition-shadow hover:shadow-md' : ''}`}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">
+            <div className="h-full border-b border-black/10 px-6 py-6 sm:border-r xl:border-b-0">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-gray-600">
                   {card.title}
-                </CardTitle>
-                <div className={`rounded-lg p-2 ${card.bgColor}`}>
-                  <Icon className={`h-4 w-4 ${card.color}`} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{card.getValue(data)}</div>
-              </CardContent>
-            </Card>
+                </span>
+                <Icon className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+              </div>
+              <div className="mt-6 text-4xl font-extrabold leading-none tracking-[-0.06em] tabular-nums text-black">{new Intl.NumberFormat('es-AR').format(card.getValue(data))}</div>
+              <p className="mt-3 text-xs text-gray-500">{'getDetail' in card && card.getDetail ? card.getDetail(data) : 'Inventario actual'}</p>
+            </div>
           );
 
           if (card.href) {
             return (
-              <Link key={card.title} href={card.href} className="block">
+              <Link key={card.title} href={card.href} className="block focus-visible:outline-offset-[-3px] hover:bg-accent/60">
                 {content}
               </Link>
             );

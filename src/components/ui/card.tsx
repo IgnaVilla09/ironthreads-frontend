@@ -7,7 +7,7 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
     <div
       ref={ref}
       className={cn(
-        'rounded-xl border bg-card text-card-foreground shadow-sm',
+        'rounded-xl border border-black/10 bg-card text-card-foreground shadow-none',
         className
       )}
       {...props}
@@ -72,10 +72,10 @@ const Message = React.forwardRef<HTMLDivElement, { role: 'user' | 'assistant'; c
     const isError = content.toLowerCase().includes('error');
     const bubbleClass =
       role === 'user'
-        ? 'bg-blue-600 text-white'
+        ? 'bg-primary text-black'
         : isError
           ? 'bg-red-600 text-white'
-          : 'bg-zinc-900 text-white';
+          : 'bg-black text-white';
 
     return (
       <div

@@ -7,7 +7,6 @@ import {
   Cell,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import { ColorDistribution } from "@/types/analytics";
 import { COLOR_LABELS } from "@/lib/constants";
@@ -52,7 +51,7 @@ export function PieChartByColor({ data, isLoading }: PieChartByColorProps) {
   }));
 
   return (
-    <Card className="bg-[#d5d5d5]">
+    <Card>
       <CardHeader>
         <CardTitle className="text-base">Stock por Color</CardTitle>
       </CardHeader>

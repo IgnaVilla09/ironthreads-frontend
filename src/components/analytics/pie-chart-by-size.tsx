@@ -7,7 +7,6 @@ import {
   Cell,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import { SizeDistribution } from "@/types/analytics";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,19 +14,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 const COLORS_PALETTE = [
   "#00b1cd",
   "#000000",
-  "#6b7280",
-  "#ef4444",
-  "#f59e0b",
-  "#10b981",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-  "#84cc16",
-  "#06b6d4",
-  "#a855f7",
-  "#e11d48",
+   "#6b7280",
+   "#83dce9",
+   "#343434",
+   "#a5a5a5",
+   "#007c91",
 ];
 
 interface PieChartBySizeProps {
@@ -68,7 +59,7 @@ export function PieChartBySize({ data, isLoading }: PieChartBySizeProps) {
   }));
 
   return (
-    <Card className="bg-[#d5d5d5]">
+    <Card>
       <CardHeader>
         <CardTitle className="text-base">Stock por Talle</CardTitle>
       </CardHeader>

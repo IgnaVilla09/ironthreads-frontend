@@ -16,11 +16,11 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-dvh overflow-hidden bg-[#f7f8f8]">
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header user={session.user} />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main id="contenido-principal" className="flex-1 overflow-y-auto overscroll-contain scroll-p-6">{children}</main>
         <FloatingChatButton />
       </div>
     </div>

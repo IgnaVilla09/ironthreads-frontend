@@ -7,7 +7,6 @@ import {
   Cell,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -26,9 +25,8 @@ interface PieChartCardProps {
 }
 
 const DEFAULT_COLORS = [
-  '#00b1cd', '#000000', '#6b7280', '#ef4444', '#f59e0b',
-  '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6',
-  '#f97316', '#84cc16', '#06b6d4', '#a855f7', '#e11d48',
+  '#00b1cd', '#000000', '#6b7280', '#83dce9', '#343434',
+  '#a5a5a5', '#007c91',
 ];
 
 export function PieChartCard({

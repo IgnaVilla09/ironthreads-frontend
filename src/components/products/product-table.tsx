@@ -26,7 +26,7 @@ interface ProductTableProps {
   onPageChange?: (page: number) => void;
 }
 
-export function ProductTable({ products, pagination }: ProductTableProps) {
+export function ProductTable({ products }: ProductTableProps) {
   const { deleteProduct, isSubmitting } = useProductStore();
   const addToast = useToastStore((s) => s.addToast);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
@@ -45,7 +45,7 @@ export function ProductTable({ products, pagination }: ProductTableProps) {
 
   return (
     <div>
-      <div className="rounded-xl border bg-white">
+      <div className="overflow-hidden rounded-xl border bg-white">
         <Table>
           <TableHeader>
             <TableRow>
@@ -66,12 +66,12 @@ export function ProductTable({ products, pagination }: ProductTableProps) {
               return (
                 <TableRow key={product.id}>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                     <div className="flex min-w-0 items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                         <Package className="h-4 w-4 text-primary" />
                       </div>
-                      <div>
-                        <p className="font-medium">{product.name}</p>
+                       <div className="min-w-0">
+                         <p className="max-w-[260px] truncate font-semibold" title={product.name}>{product.name}</p>
                         {product.description && (
                           <p className="text-xs text-gray-500 line-clamp-1">
                             {product.description}
@@ -94,34 +94,29 @@ export function ProductTable({ products, pagination }: ProductTableProps) {
                   <TableCell>
                     <Badge variant="secondary">{product.variants.length}</Badge>
                   </TableCell>
-                  <TableCell className="font-medium">{totalStock}</TableCell>
+                   <TableCell className="font-semibold tabular-nums">{new Intl.NumberFormat('es-AR').format(totalStock)}</TableCell>
                   <TableCell className="text-sm text-gray-500">
                     {formatDate(product.updatedAt)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Link href={`/productos/${product.id}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Link href={`/productos/${product.id}/editar`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Link href={`/transferencias?variantId=${product.variants[0]?.id ?? ''}&productId=${product.id}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Transferir stock">
-                          <ArrowLeftRight className="h-4 w-4" />
-                        </Button>
-                      </Link>
+                       <Link href={`/productos/${product.id}`} aria-label={`Ver ${product.name}`} className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent focus-visible:outline-offset-2">
+                         <Eye className="h-4 w-4" aria-hidden="true" />
+                       </Link>
+                       <Link href={`/productos/${product.id}/editar`} aria-label={`Editar ${product.name}`} className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent focus-visible:outline-offset-2">
+                         <Pencil className="h-4 w-4" aria-hidden="true" />
+                       </Link>
+                       <Link href={`/transferencias?variantId=${product.variants[0]?.id ?? ''}&productId=${product.id}`} aria-label={`Transferir stock de ${product.name}`} className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent focus-visible:outline-offset-2">
+                         <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+                       </Link>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-red-500 hover:text-red-600"
+                         aria-label={`Eliminar ${product.name}`}
+                         className="h-9 w-9 text-red-600 hover:text-red-700"
                         onClick={() => setDeleteTarget(product)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                         <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </div>
                   </TableCell>

@@ -39,6 +39,8 @@ interface ProductState {
   resetSelectedProduct: () => void;
 }
 
+let latestProductsRequest = 0;
+
 export const useProductStore = create<ProductState>()(
   persist(
     (set, get) => ({
@@ -52,23 +54,26 @@ export const useProductStore = create<ProductState>()(
       errorMessage: null,
       isSubmitting: false,
 
-      fetchProducts: async (page = 1) => {
-        set({ isLoading: true, isError: false, errorMessage: null });
+       fetchProducts: async (page = 1) => {
+         const requestId = ++latestProductsRequest;
+         set({ isLoading: true, isError: false, errorMessage: null });
         try {
           const { filters, searchQuery } = get();
-          const response = await apiClient.get<Product[]>('/api/v1/products', {
+           const response = await apiClient.get<Product[]>('/api/v1/products', {
             ...filters,
             search: searchQuery || undefined,
             page,
             limit: 8,
-          });
-          set({
+           });
+           if (requestId !== latestProductsRequest) return;
+           set({
             products: response.data ?? [],
             pagination: response.meta ?? null,
             isLoading: false,
           });
-        } catch (error) {
-          set({
+         } catch (error) {
+           if (requestId !== latestProductsRequest) return;
+           set({
             isError: true,
             errorMessage: error instanceof Error ? error.message : 'Error al cargar productos',
             isLoading: false,

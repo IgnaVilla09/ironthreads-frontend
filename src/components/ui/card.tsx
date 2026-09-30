@@ -87,7 +87,7 @@ const Message = React.forwardRef<HTMLDivElement, { role: 'user' | 'assistant'; c
       >
         <div
           className={cn(
-            'max-w-[80%] px-3.5 py-2 rounded-2xl text-sm shadow [overflow-wrap:anywhere]',
+            'max-w-[80%] whitespace-pre-wrap px-3.5 py-2 rounded-2xl text-sm shadow [overflow-wrap:anywhere]',
             bubbleClass,
             role === 'user' ? 'rounded-br-sm self-end' : 'rounded-bl-sm self-start'
           )}

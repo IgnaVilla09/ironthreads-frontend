@@ -2,33 +2,40 @@
 
 import * as React from 'react';
 import { useChatStore } from '@/stores/chat-store';
-import { apiClient } from '@/lib/api-client';
-import { renderChatContent } from '@/lib/chat-content';
+import { chatApiClient } from '@/lib/chat-api-client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Message } from '@/components/ui/card';
-import { Dialog, DialogOverlay, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { ChatThinkingIndicator } from '@/components/ui/chat-thinking-indicator';
+import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 export const ChatDialog = () => {
-  const { messages, addMessage, clearMessages } = useChatStore();
+  const { messages, conversationId, addMessage } = useChatStore();
+  const [isSending, setIsSending] = React.useState(false);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  React.useLayoutEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, isSending]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     const input = e.target as HTMLFormElement;
     const textInput = input.elements.namedItem('message') as HTMLInputElement;
     const messageText = textInput.value.trim();
-    if (!messageText) return;
+    if (!messageText || isSending) return;
 
     addMessage({ role: 'user', content: messageText });
     textInput.value = '';
+    setIsSending(true);
 
     try {
-      const data = await apiClient.post<{ response: string }>('/api/v1/chat/message', {
-        message: messageText,
-      });
-      addMessage({ role: 'assistant', content: data.data?.response || 'Sin respuesta' });
-    } catch (err) {
-      addMessage({ role: 'assistant', content: 'Error conectando con el servidor' });
+      const data = await chatApiClient.sendMessage(messageText, conversationId);
+      addMessage({ role: 'assistant', content: data.response || 'Sin respuesta' });
+    } catch (error) {
+      addMessage({ role: 'assistant', content: error instanceof Error ? error.message : 'Error conectando con el servidor' });
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -41,7 +48,7 @@ export const ChatDialog = () => {
         </DialogDescription>
       </DialogHeader>
 
-      <div className="h-64 overflow-y-auto space-y-2 px-2 pb-3">
+      <div ref={scrollRef} className="h-64 overflow-y-auto space-y-2 px-2 pb-3">
         {messages.map((msg) => (
           <Message
             key={msg.id}
@@ -49,6 +56,7 @@ export const ChatDialog = () => {
             content={msg.content}
           />
         ))}
+        {isSending ? <ChatThinkingIndicator /> : null}
       </div>
 
       <DialogFooter>
@@ -58,7 +66,7 @@ export const ChatDialog = () => {
             name="message"
             placeholder="Escribí tu consulta..."
           />
-          <Button type="submit">Enviar</Button>
+          <Button type="submit" disabled={isSending}>Enviar</Button>
         </form>
       </DialogFooter>
     </DialogContent>

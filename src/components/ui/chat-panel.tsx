@@ -3,19 +3,20 @@
 import * as React from 'react';
 import { Bot, RotateCcw, Send } from 'lucide-react';
 import { useChatStore, type Message as ChatMessage } from '@/stores/chat-store';
-import { apiClient } from '@/lib/api-client';
+import { chatApiClient } from '@/lib/chat-api-client';
 import { Message } from '@/components/ui/card';
+import { ChatThinkingIndicator } from '@/components/ui/chat-thinking-indicator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-function ChatScrollArea({ messages }: { messages: ChatMessage[] }) {
+function ChatScrollArea({ messages, isSending }: { messages: ChatMessage[]; isSending: boolean }) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   React.useLayoutEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [messages, isSending]);
 
   return (
     <div ref={scrollRef} className="h-[26rem] space-y-3 overflow-x-hidden overflow-y-auto rounded-xl bg-zinc-50 p-3">
@@ -28,6 +29,7 @@ function ChatScrollArea({ messages }: { messages: ChatMessage[] }) {
       ) : (
         messages.map((msg) => <Message key={msg.id} role={msg.role} content={msg.content} />)
       )}
+      {isSending ? <ChatThinkingIndicator /> : null}
     </div>
   );
 }
@@ -42,7 +44,7 @@ export function ChatPanel() {
 
   const handleClear = () => {
     if (conversationId) {
-      apiClient.delete(`/api/v1/chat/messages/${conversationId}`).catch(() => {});
+      void chatApiClient.clearConversation(conversationId).catch(() => {});
     }
     resetConversation();
   };
@@ -59,13 +61,10 @@ export function ChatPanel() {
     setIsSending(true);
 
     try {
-      const data = await apiClient.post<{ response: string }>('/api/v1/chat/message', {
-        message: messageText,
-        conversationId,
-      });
-      addMessage({ role: 'assistant', content: data.data?.response || 'Sin respuesta' });
-    } catch {
-      addMessage({ role: 'assistant', content: 'Error conectando con el servidor' });
+      const data = await chatApiClient.sendMessage(messageText, conversationId);
+      addMessage({ role: 'assistant', content: data.response || 'Sin respuesta' });
+    } catch (error) {
+      addMessage({ role: 'assistant', content: error instanceof Error ? error.message : 'Error conectando con el servidor' });
     } finally {
       setIsSending(false);
     }
@@ -89,14 +88,14 @@ export function ChatPanel() {
             size="sm"
             onClick={handleClear}
             className="gap-1.5 text-xs text-muted-foreground hover:text-primary"
-            disabled={messages.length === 0}
+            disabled={messages.length === 0 || isSending}
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Limpiar conversación
           </Button>
         </div>
 
-        <ChatScrollArea messages={messages} />
+        <ChatScrollArea messages={messages} isSending={isSending} />
 
         <DialogFooter>
           <form onSubmit={handleSend} className="flex w-full gap-2">

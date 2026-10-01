@@ -1,6 +1,6 @@
 import { ApiResponse } from '@/types/api';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = '/api/backend';
 const REQUEST_TIMEOUT = 15000;
 
 class ApiError extends Error {
@@ -26,7 +26,7 @@ async function request<T>(
 ): Promise<ApiResponse<T>> {
   const { method = 'GET', body, params } = config;
 
-  let url = `${API_BASE}${endpoint}`;
+    let url = `${API_BASE}${endpoint.replace(/^\/api\/v1/, '')}`;
 
   if (params) {
     const searchParams = new URLSearchParams();

@@ -6,6 +6,7 @@ import { PageContainer } from '@/components/layout/page-container';
 import { PageHeader } from '@/components/shared/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useOfflineStore } from '@/stores/offline-store';
 
 const options = [
   {
@@ -23,6 +24,7 @@ const options = [
 ];
 
 export default function VentasHomePage() {
+  const offline = useOfflineStore((state) => state.offline);
   return (
     <PageContainer>
       <PageHeader
@@ -32,7 +34,7 @@ export default function VentasHomePage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {options.map((option) => (
-          <Card key={option.href} className="border-2 transition-colors hover:border-primary/30">
+          <Card key={option.href} className={`border-2 ${offline && option.href.includes('puntos-de-venta') ? 'border-gray-200 bg-gray-100 opacity-55' : 'transition-colors hover:border-primary/30'}`}>
             <CardHeader className="space-y-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <option.icon className="h-6 w-6" />
@@ -43,12 +45,12 @@ export default function VentasHomePage() {
               </div>
             </CardHeader>
             <CardContent>
-              <Link href={option.href}>
+              {offline && option.href.includes('puntos-de-venta') ? <Button disabled>Requiere conexión</Button> : <Link href={offline ? '/offline?tab=sale' : option.href}>
                 <Button className="gap-2">
                   Abrir
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-              </Link>
+              </Link>}
             </CardContent>
           </Card>
         ))}

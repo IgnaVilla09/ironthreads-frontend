@@ -17,7 +17,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Plus, Package, Download, Loader2 } from 'lucide-react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = '/api/backend';
 
 export default function ProductosPage() {
   const { products, pagination, isLoading, isError, errorMessage, filters, searchQuery, fetchProducts } = useProductStore();
@@ -48,7 +48,7 @@ export default function ProductosPage() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/inventory/export-by-pos`);
+      const res = await fetch(`${API_BASE}/inventory/export-by-pos`);
       if (!res.ok) throw new Error('Error al exportar');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);

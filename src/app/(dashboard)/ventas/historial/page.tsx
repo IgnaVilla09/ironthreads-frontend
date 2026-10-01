@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { LoadingState } from '@/components/shared/loading-state';
 import { EmptyState } from '@/components/shared/empty-state';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = '/api/backend';
 
 function todayStr() {
   const d = new Date();
@@ -62,7 +62,7 @@ export default function HistorialVentasPage() {
     setIsExporting(true);
     try {
       const params = new URLSearchParams({ from: dateFrom, to: dateTo });
-      const url = `${API_BASE}/api/v1/ventas/export?${params}`;
+      const url = `${API_BASE}/ventas/export?${params}`;
 
       const res = await fetch(url);
       if (!res.ok) throw new Error('Error al exportar');

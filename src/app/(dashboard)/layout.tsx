@@ -3,6 +3,8 @@ import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { getCurrentSession } from '@/lib/server-auth';
 import { FloatingChatButton } from '@/components/ui/floating-chat-button';
+import { OfflineProvider } from '@/components/offline/offline-provider';
+import { OfflineGuard } from '@/components/offline/offline-guard';
 
 export default async function DashboardLayout({
   children,
@@ -17,10 +19,11 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-dvh overflow-hidden bg-[#f7f8f8]">
+      <OfflineProvider user={session.user} />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header user={session.user} />
-        <main id="contenido-principal" className="flex-1 overflow-y-auto overscroll-contain scroll-p-6">{children}</main>
+        <main id="contenido-principal" className="flex-1 overflow-y-auto overscroll-contain scroll-p-6"><OfflineGuard>{children}</OfflineGuard></main>
         <FloatingChatButton />
       </div>
     </div>

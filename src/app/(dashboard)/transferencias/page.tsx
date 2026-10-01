@@ -19,7 +19,7 @@ import { Product, ProductVariant, StockTransfer } from '@/types/product';
 import { ArrowLeftRight, Package, Search, Loader2, Check, Download } from 'lucide-react';
 import { formatDate } from '@/lib/formatters';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = '/api/backend';
 
 export default function TransferenciasPage() {
   return (
@@ -156,7 +156,7 @@ function TransferenciasContent() {
   const handleExportTransfers = async () => {
     setIsExportingTransfers(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/inventory/transfers/export`);
+      const res = await fetch(`${API_BASE}/inventory/transfers/export`);
       if (!res.ok) throw new Error('Error al exportar');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);

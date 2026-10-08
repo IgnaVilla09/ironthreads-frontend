@@ -3,7 +3,7 @@ import { ApiResponse } from '@/types/api';
 const API_BASE = '/api/backend';
 const REQUEST_TIMEOUT = 15000;
 
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(
     message: string,
     public status?: number,

@@ -33,7 +33,36 @@ export interface Sale {
   total: number;
   observaciones?: string;
   createdAt: string;
+  revision: number;
+  editedAt: string | null;
   items: SaleItem[];
+}
+
+export interface SaleEditInput {
+  requestId: string;
+  revision: number;
+  reason: string;
+  settled: true;
+  paymentMethod: CreateSaleInput['paymentMethod'] | null;
+  returns: { saleItemId: string; quantity: number; depositoId: string | null; originalUnitPrice?: number }[];
+  deliveries: { inventoryItemId: string; quantity: number; unitPrice: number }[];
+}
+
+export interface SaleEdit {
+  id: string;
+  revision: number;
+  actorName: string;
+  createdAt: string;
+  reason: string;
+  regularization: number;
+  difference: number;
+  paymentMethod: string | null;
+  before: Sale;
+  after: Sale;
+  movements: {
+    direction: 'RETURN' | 'DELIVERY'; productName: string; colorName: string; sizeName: string;
+    depositoLabel: string; quantity: number; unitPrice: number;
+  }[];
 }
 
 export interface StockVerificationItem {

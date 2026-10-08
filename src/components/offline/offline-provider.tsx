@@ -45,6 +45,9 @@ export function OfflineProvider({ user }: { user?: AuthUser }) {
     if (user) localStorage.setItem(OFFLINE_USER_KEY, JSON.stringify(user));
     let alive = true;
     let lastSnapshot = 0;
+    let snapshotGeneration = 0;
+    const invalidateSnapshot = () => { snapshotGeneration++; lastSnapshot = 0; };
+    window.addEventListener('iron:inventory-changed', invalidateSnapshot);
     offlineDb.snapshot(currentUser.id).then((snapshot) => {
       if (alive) useOfflineStore.getState().setSnapshotAt(snapshot?.updatedAt ?? null);
     }).catch(() => {});
@@ -85,6 +88,7 @@ export function OfflineProvider({ user }: { user?: AuthUser }) {
     }
 
     const check = async () => {
+      const generation = snapshotGeneration;
       if (!navigator.onLine) { useOfflineStore.getState().setStatus(false); return; }
       try {
         if (Date.now() - lastSnapshot < 5 * 60_000) {
@@ -99,7 +103,7 @@ export function OfflineProvider({ user }: { user?: AuthUser }) {
         if (response.status === 401) { useOfflineStore.getState().setChecking(false); return; }
         if (!response.ok) throw new Error('Servidor no disponible');
         const payload = await response.json() as { data: Omit<Snapshot, 'userId'> };
-        if (!alive) return;
+        if (!alive || generation !== snapshotGeneration) return;
         useOfflineStore.getState().setStatus(true);
         lastSnapshot = Date.now();
         try {
@@ -123,6 +127,7 @@ export function OfflineProvider({ user }: { user?: AuthUser }) {
       window.clearInterval(interval);
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
+      window.removeEventListener('iron:inventory-changed', invalidateSnapshot);
       document.removeEventListener('visibilitychange', onVisible);
     };
   }, [user?.id, router]);

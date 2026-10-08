@@ -23,7 +23,7 @@ export default async function DashboardLayout({
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header user={session.user} />
-        <main id="contenido-principal" className="flex-1 overflow-y-auto overscroll-contain scroll-p-6"><OfflineGuard>{children}</OfflineGuard></main>
+        <main id="contenido-principal" className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-p-6"><OfflineGuard>{children}</OfflineGuard></main>
         <FloatingChatButton />
       </div>
     </div>

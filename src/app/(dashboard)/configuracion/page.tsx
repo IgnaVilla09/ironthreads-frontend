@@ -353,7 +353,7 @@ export default function ConfiguracionPage() {
               Agregar punto de venta
             </Button>
           </div>
-          <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-pan-x">
+          <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-auto">
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                 <tr>
@@ -442,7 +442,7 @@ export default function ConfiguracionPage() {
                     Agregar depósito
                   </Button>
                 </div>
-                <div className="max-h-[40dvh] min-h-0 overflow-y-auto overscroll-contain rounded-lg border sm:max-h-96">
+                <div className="max-h-[40dvh] min-h-0 overflow-y-auto rounded-lg border sm:max-h-96">
                   <table className="w-full table-fixed text-sm">
                     <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                       <tr>
@@ -557,7 +557,7 @@ export default function ConfiguracionPage() {
               Agregar color
             </Button>
           </div>
-          <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-pan-x">
+          <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-auto">
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                 <tr>
@@ -628,7 +628,7 @@ export default function ConfiguracionPage() {
               Agregar talle
             </Button>
           </div>
-          <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-pan-x">
+          <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-auto">
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                 <tr>
@@ -691,7 +691,7 @@ export default function ConfiguracionPage() {
               Agregar categoría
             </Button>
           </div>
-          <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-pan-x">
+          <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-auto">
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                 <tr>

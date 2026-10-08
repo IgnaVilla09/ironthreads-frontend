@@ -502,7 +502,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
 
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold">Stock por punto de venta</Label>
-                  <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-pan-x">
+                  <div className="overflow-x-auto rounded-lg border overscroll-x-contain touch-auto">
                     <table className="w-full min-w-[520px] text-sm">
                       <thead>
                         <tr className="border-b bg-gray-50">
@@ -624,7 +624,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                       {isEditing && (
                         <div className="rounded-lg border border-t-0 bg-gray-50 p-4 space-y-3">
                           <p className="text-xs font-semibold text-gray-600">Stock por punto de venta</p>
-                          <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
+                          <div className="overflow-x-auto overscroll-x-contain touch-auto">
                           <table className="w-full min-w-[520px] text-sm">
                             <thead>
                               <tr className="border-b">

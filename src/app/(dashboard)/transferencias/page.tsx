@@ -1,4 +1,5 @@
 'use client';
+import { Pagination } from '@/components/shared/pagination';
 
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -369,7 +370,7 @@ function TransferenciasContent() {
             ) : transfers.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-8">No hay transferencias registradas</p>
             ) : (
-              <div className="overflow-x-auto rounded-xl border overscroll-x-contain touch-pan-x">
+              <div className="overflow-x-auto rounded-xl border overscroll-x-contain touch-auto">
                 <table className="w-full min-w-[800px]">
                   <thead>
                     <tr className="border-b text-left">
@@ -409,18 +410,11 @@ function TransferenciasContent() {
             )}
 
             {transferPagination && transferPagination.totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-4">
-                {Array.from({ length: transferPagination.totalPages }, (_, i) => (
-                  <Button
-                    key={i + 1}
-                    variant={transferPagination.page === i + 1 ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => fetchTransfers(i + 1)}
-                  >
-                    {i + 1}
-                  </Button>
-                ))}
-              </div>
+              <Pagination
+                currentPage={transferPagination.page}
+                totalPages={transferPagination.totalPages}
+                onPageChange={fetchTransfers}
+              />
             )}
           </CardContent>
         </Card>

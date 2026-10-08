@@ -68,3 +68,21 @@
     animation: fade-in-up 0.4s ease-out;
   }
 }
+
+/* A short greeting followed by a long rest; transform keeps layout stable. */
+@keyframes agent-iron-greeting {
+  0%, 14.4%, 100% { transform: translateY(0) rotate(0); }
+  2.4% { transform: translateY(-4px) rotate(0); }
+  4.8% { transform: translateY(0) rotate(0); }
+  7.2% { transform: translateY(-2px) rotate(0); }
+  8.64% { transform: translateY(0) rotate(-2deg); }
+  10.08% { transform: translateY(0) rotate(2deg); }
+  11.52% { transform: translateY(0) rotate(-1deg); }
+  12.96% { transform: translateY(0) rotate(1deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-agent-attention='true']:not(:hover):not(:focus-within):not(:active) {
+    animation: agent-iron-greeting 5s ease-in-out 4s infinite;
+  }
+}

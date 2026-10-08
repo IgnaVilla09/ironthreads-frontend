@@ -139,7 +139,7 @@ export default function ProductoPage() {
               <span className="font-bold">{totalStock} unidades</span>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border bg-white overscroll-x-contain touch-pan-x lg:overflow-visible">
+            <div className="overflow-x-auto rounded-xl border bg-white overscroll-x-contain touch-auto lg:overflow-visible">
               <table className="w-full min-w-[780px] lg:table-fixed lg:min-w-0">
                 <thead>
                   <tr className="border-b text-left">

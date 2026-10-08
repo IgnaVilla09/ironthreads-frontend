@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 
 import { useEffect, useState, useTransition } from 'react';
 import { Check, Clock3, Loader2, Phone, RefreshCcw, Store, XCircle } from 'lucide-react';
@@ -187,7 +188,10 @@ export default function VentasPuntoDeVentaPage() {
                       <p className="text-gray-500">Total pedido</p>
                       <p className="text-lg font-semibold text-gray-900">{formatCurrency(order.total)}</p>
                       {order.sale && (
-                        <p className="mt-2 text-xs text-emerald-700">Venta asociada: {order.sale.id.slice(0, 8)}</p>
+                        <div className="mt-2 text-xs text-emerald-700">
+                          <Link className="underline" href={`/ventas/${order.sale.id}/editar`}>Ver / editar venta: {order.sale.id.slice(0, 8)}</Link>
+                          <p className="mt-1 text-gray-500">Este pedido conserva los artículos originales. Consultá los cambios en la venta.</p>
+                        </div>
                       )}
                     </div>
                   </div>

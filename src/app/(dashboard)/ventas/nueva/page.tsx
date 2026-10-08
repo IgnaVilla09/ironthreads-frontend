@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/select';
 import { useToastStore } from '@/stores/toast-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { apiClient } from '@/lib/api-client';
+import { formatCurrency } from '@/lib/formatters';
 import { Product } from '@/types/product';
 import { ColorOption, SizeOption } from '@/types/settings';
 import { StockVerificationItem } from '@/types/venta';
@@ -28,6 +29,7 @@ interface CartItem {
   sizeLabel: string;
   quantity: number;
   stock: number;
+  unitPrice: number;
 }
 
 export default function VentasPage() {
@@ -42,6 +44,7 @@ export default function VentasPage() {
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
+  const [unitPrice, setUnitPrice] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -99,6 +102,7 @@ export default function VentasPage() {
     setSelectedColor('');
     setSelectedSize('');
     setQuantity(1);
+    setUnitPrice(product.price === null ? '' : String(product.price));
     setVerificationResult(null);
     setSearchQuery(product.name);
     setShowDropdown(false);
@@ -134,7 +138,8 @@ export default function VentasPage() {
     : null;
 
   const hasAllSelections = selectedProduct && selectedColor && selectedSize && quantity > 0;
-  const canSubmit = cart.length > 0 && paymentMethod && selectedPos;
+  const canSubmit = cart.length > 0 && paymentMethod && selectedPos && cart.every((item) => Number.isInteger(item.unitPrice) && item.unitPrice >= 0);
+  const validPrice = /^\d+$/.test(unitPrice) && Number.isSafeInteger(Number(unitPrice)) && Number(unitPrice) <= 2147483647;
 
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => Math.max(1, prev + delta));
@@ -160,7 +165,7 @@ export default function VentasPage() {
   };
 
   const handleAddToCart = () => {
-    if (!selectedVariant || !selectedProduct) return;
+    if (!selectedVariant || !selectedProduct || !validPrice) return;
 
     const colorLabel = colors.find((c) => c.id === selectedColor)?.label ?? '';
     const sizeLabel = sizes.find((s) => s.id === selectedSize)?.label ?? '';
@@ -170,6 +175,10 @@ export default function VentasPage() {
     );
 
     if (existingIndex >= 0) {
+      if (cart[existingIndex].unitPrice !== Number(unitPrice)) {
+        addToast('Este artículo ya está en el carrito con otro precio. Ajustá su precio desde el carrito.', 'error');
+        return;
+      }
       const updated = [...cart];
       const newQty = updated[existingIndex].quantity + quantity;
       if (newQty > selectedVariant.stock) {
@@ -188,6 +197,7 @@ export default function VentasPage() {
         sizeLabel,
         quantity,
         stock: selectedVariant.stock,
+        unitPrice: Number(unitPrice),
       }]);
     }
 
@@ -220,7 +230,7 @@ export default function VentasPage() {
         items: cart.map((item) => ({
           variantId: item.variantId,
           quantity: item.quantity,
-          unitPrice: 0,
+          unitPrice: item.unitPrice,
         })),
         paymentMethod,
         pointOfSaleId: selectedPos,
@@ -415,6 +425,9 @@ export default function VentasPage() {
                       </div>
                     </div>
 
+                    <label className="block text-sm font-medium">Precio unitario acordado (ARS)
+                      <Input type="number" min="0" step="1" value={unitPrice} onChange={(event) => setUnitPrice(event.target.value)} />
+                    </label>
                     <Button
                       variant="outline"
                       size="sm"
@@ -460,6 +473,7 @@ export default function VentasPage() {
                       <Button
                         className="w-full gap-2"
                         onClick={handleAddToCart}
+                        disabled={!validPrice}
                       >
                         <ShoppingCart className="h-4 w-4" />
                         Agregar al carrito
@@ -556,6 +570,10 @@ export default function VentasPage() {
                         </button>
                       </div>
 
+                      <label className="block text-xs text-gray-600">Precio unitario (ARS)
+                        <Input type="number" min="0" step="1" value={Number.isNaN(item.unitPrice) ? '' : item.unitPrice}
+                          onChange={(event) => setCart((current) => current.map((row) => row.variantId === item.variantId ? { ...row, unitPrice: event.target.value === '' ? NaN : Number(event.target.value) } : row))} />
+                      </label>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1">
                           <Button
@@ -591,6 +609,7 @@ export default function VentasPage() {
                   ))}
 
                   <div className="border-t pt-3 space-y-3">
+                    <div className="flex justify-between font-semibold"><span>Total:</span><span>{formatCurrency(cart.reduce((sum, item) => sum + (Number.isFinite(item.unitPrice) ? item.unitPrice : 0) * item.quantity, 0))}</span></div>
                     <div className="flex justify-between text-sm font-medium">
                       <span className="text-gray-600">Total items:</span>
                       <span className="text-gray-900">{cartTotalItems}</span>

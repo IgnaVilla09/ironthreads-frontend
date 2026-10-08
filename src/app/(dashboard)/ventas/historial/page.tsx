@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { apiClient } from '@/lib/api-client';
 import { Sale } from '@/types/venta';
 import { PaginationMeta } from '@/types/api';
-import { formatDate } from '@/lib/formatters';
+import { formatDate, formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
-import { ShoppingCart, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
+import { ShoppingCart, Download, Loader2 } from 'lucide-react';
+import { Pagination } from '@/components/shared/pagination';
 import Link from 'next/link';
 import { LoadingState } from '@/components/shared/loading-state';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -47,7 +48,7 @@ export default function HistorialVentasPage() {
       });
       setSales(res.data ?? []);
       setMeta(res.meta ?? null);
-    } catch {
+    } catch (err) { console.error("Fallo al cargar ventas", err);
       setSales([]);
     } finally {
       setIsLoading(false);
@@ -76,7 +77,7 @@ export default function HistorialVentasPage() {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(downloadUrl);
-    } catch {
+    } catch (err) { console.error("Fallo al cargar ventas", err);
       alert('Error al exportar el informe');
     } finally {
       setIsExporting(false);
@@ -141,7 +142,7 @@ export default function HistorialVentasPage() {
           ) : sales.length === 0 ? (
             <EmptyState title="No hay ventas registradas" description="Aún no se ha realizado ninguna venta." />
           ) : (
-            <div className="overflow-x-auto overscroll-x-contain rounded-lg touch-pan-x">
+            <div className="overflow-x-auto overscroll-x-contain rounded-lg touch-auto">
               <table className="w-full min-w-[900px] text-sm">
                 <thead>
                   <tr className="border-b bg-gray-50">
@@ -152,7 +153,8 @@ export default function HistorialVentasPage() {
                     <th className="px-4 py-3 text-right font-medium text-gray-600">Cant.</th>
                     <th className="px-4 py-3 text-center font-medium text-gray-600">Método de pago</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600">Observaciones</th>
-                    <th className="px-4 py-3 text-right font-medium text-gray-600">Total items</th>
+                     <th className="px-4 py-3 text-right font-medium text-gray-600">Total items</th>
+                    <th className="px-4 py-3 text-right font-medium text-gray-600">Importe / acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -167,32 +169,11 @@ export default function HistorialVentasPage() {
       </Card>
 
       {meta && meta.totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between">
+        <div className="mt-4">
           <p className="text-sm text-gray-500">
             Página {meta.page} de {meta.totalPages} · {meta.total} ventas
           </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="gap-1"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Anterior
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= (meta.totalPages ?? 1)}
-              onClick={() => setPage((p) => p + 1)}
-              className="gap-1"
-            >
-              Siguiente
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <Pagination currentPage={meta.page} totalPages={meta.totalPages} onPageChange={setPage} />
         </div>
       )}
     </PageContainer>
@@ -218,6 +199,7 @@ function SaleRow({ sale }: { sale: Sale }) {
               rowSpan={sale.items.length}
             >
               {formatDate(sale.createdAt)}
+              {sale.revision > 0 && <span className="mt-2 block w-fit rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">Venta editada</span>}
             </td>
           )}
           <td className="px-4 py-3 font-medium text-gray-900">{item.productName}</td>
@@ -250,6 +232,11 @@ function SaleRow({ sale }: { sale: Sale }) {
               {sale.items.reduce((sum, i) => sum + i.quantity, 0)}
             </td>
           )}
+          {idx === 0 && <td rowSpan={sale.items.length} className="px-4 py-3 align-top text-right">
+            <p className="font-medium">{formatCurrency(sale.total)}</p>
+            <Link className="mt-2 block text-primary underline" href={`/ventas/${sale.id}/editar`}>Editar venta</Link>
+            {sale.revision > 0 && <Link className="mt-2 block underline" href={`/ventas/${sale.id}/editar#cambios`}>Ver cambios</Link>}
+          </td>}
         </tr>
       ))}
     </>

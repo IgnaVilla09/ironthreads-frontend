@@ -16,6 +16,7 @@ import { Pagination } from '@/components/shared/pagination';
 import Link from 'next/link';
 import { LoadingState } from '@/components/shared/loading-state';
 import { EmptyState } from '@/components/shared/empty-state';
+import { useUiStore } from '@/stores/ui-store';
 
 const API_BASE = '/api/backend';
 
@@ -34,7 +35,8 @@ export default function HistorialVentasPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
-  const [page, setPage] = useState(1);
+  const page = useUiStore((state) => state.salesHistoryPage);
+  const setPage = useUiStore((state) => state.setSalesHistoryPage);
   const [dateFrom, setDateFrom] = useState(monthAgoStr());
   const [dateTo, setDateTo] = useState(todayStr());
   const [isExporting, setIsExporting] = useState(false);
@@ -58,6 +60,12 @@ export default function HistorialVentasPage() {
   useEffect(() => {
     fetchSales(page);
   }, [page, fetchSales]);
+
+  useEffect(() => {
+    if (meta && meta.totalPages > 0 && page > meta.totalPages) {
+      setPage(meta.totalPages);
+    }
+  }, [meta, page, setPage]);
 
   const handleExport = async () => {
     setIsExporting(true);

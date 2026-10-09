@@ -11,6 +11,7 @@ import { ErrorState } from '@/components/shared/error-state';
 import { EmptyState } from '@/components/shared/empty-state';
 import { Pagination } from '@/components/shared/pagination';
 import { useProductStore } from '@/stores/product-store';
+import { useUiStore } from '@/stores/ui-store';
 import { apiClient } from '@/lib/api-client';
 import { GeneralStats } from '@/types/analytics';
 import Link from 'next/link';
@@ -21,15 +22,18 @@ const API_BASE = '/api/backend';
 
 export default function ProductosPage() {
   const { products, pagination, isLoading, isError, errorMessage, filters, searchQuery, fetchProducts } = useProductStore();
-  const [pageSelection, setPageSelection] = useState({ key: '', page: 1 });
+  const pageSelection = useUiStore((state) => state.productListSelection);
+  const setPageSelection = useUiStore((state) => state.setProductListSelection);
   const filterKey = JSON.stringify([filters.categoryId, filters.pointOfSaleId, filters.search, searchQuery]);
   const page = pageSelection.key === filterKey ? pageSelection.page : 1;
   const [totalStock, setTotalStock] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
-    setPageSelection({ key: filterKey, page: 1 });
-  }, [filterKey]);
+    if (pageSelection.key !== filterKey) {
+      setPageSelection({ key: filterKey, page: 1 });
+    }
+  }, [filterKey, pageSelection.key, setPageSelection]);
 
   useEffect(() => {
     apiClient.get<GeneralStats>('/api/v1/analytics/general-stats')
@@ -40,6 +44,12 @@ export default function ProductosPage() {
   useEffect(() => {
     fetchProducts(page);
   }, [fetchProducts, filterKey, page]);
+
+  useEffect(() => {
+    if (pagination && pagination.totalPages > 0 && page > pagination.totalPages) {
+      setPageSelection({ key: filterKey, page: pagination.totalPages });
+    }
+  }, [filterKey, page, pagination, setPageSelection]);
 
   const handlePageChange = (newPage: number) => {
     setPageSelection({ key: filterKey, page: newPage });

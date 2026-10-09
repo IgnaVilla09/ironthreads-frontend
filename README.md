@@ -1,1 +1,139 @@
-# Iron FrontendPanel privado de `Iron Stock`.Versi�n actual: **2.2.0**. Ver [historial de versiones](CHANGELOG.md).La versión 2.1.1 agrupa correcciones de interfaz del frontend. El backend mantienela versión **2.1.0**; esta actualización no requiere migraciones adicionales.## Instrucción para OpenCode: revisión de versionesCuando analices este proyecto, revisá `CHANGELOG.md`, los commits posteriores alúltimo hito documentado y los cambios pendientes. Determiná si una correcciónimportante, una mejora significativa o un cambio incompatible justifican aumentarla versión; no des por hecho que el número de `package.json` ya refleja el código.Si corresponde subirla, usá versionado semántico: **patch** para correccionescompatibles, **minor** para funcionalidades o mejoras compatibles y **major** paracambios incompatibles. Actualizá `package.json`, los campos `version` de la raízy de `packages[""]` en `package-lock.json`, el `CHANGELOG.md` con los commitsrelacionados y la versión indicada en este README. Si el cambio forma parte de unhito conjunto con el backend, coordiná la versión en ambos repositorios. Si todavíano corresponde subirla, explicá brevemente el motivo en el análisis.## Stack- Next.js 15- React 19- Tailwind CSS- Zustand## Variables de entornoCrear `iron/frontend/.env.local` con:```envNEXT_PUBLIC_API_URL=http://localhost:4000BACKEND_API_URL=http://localhost:4000NEXT_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.coNEXT_PUBLIC_SUPABASE_ANON_KEY=TU_ANON_KEY```## Desarrollo```bashnpm installnpm run dev```## Verificacion```bashnpm run typechecknode --test offline-shell.test.cjs```## Cambios relevantes- Las tablas permiten desplazar la página verticalmente al iniciar el gesto sobre  ellas, conservando el desplazamiento horizontal de columnas.- Productos, transferencias e historial de ventas comparten paginación compacta:  página actual, anterior, posterior y última, con puntos suspensivos si hay un salto.  El campo «Ir a página» funciona con Enter o el botón «Ir»; valores vacíos,  no enteros o fuera del rango disponible llevan al 404. En móvil los controles  se distribuyen en varias filas cuando es necesario.- Agent Iron tiene un botón compacto en móvil, con el icono centrado sobre el texto,  y espacio al final del contenido para poder acceder a la paginación manual.  En móvil y desktop, realiza dos saltitos y una vibración visual de unos 700 ms  cada **5 segundos**, comenzando tras 4 segundos. La animación se desactiva al  pasar el cursor, enfocar o pulsar el botón, abrir el chat, estar sin conexión  o tener activada la preferencia de movimiento reducido.- `Ventas` ahora separa:  - `Venta nueva`  - `Ventas de punto de venta`- `Productos` ahora permite cargar:  - `price`  - `imageUrl`  - imagen a `Supabase Storage` en el bucket publico `product-images`## Integracion con catalogoDesde este panel se confirma el pago de pedidos creados en `iron-catalog`.Al confirmar un pedido:- se crea una `Sale`- se descuenta stock- se vincula `saleId` al `CatalogOrder`## Modo offline### Preparación y acceso1. Abrí el panel e iniciá sesión **con conexión**. En `localhost` el service worker   también se instala con `npm run dev`; en producción se requiere HTTPS.2. El panel descarga productos, variantes, precios, puntos de venta, depósitos y   stock en IndexedDB. No descarga imágenes. El service worker guarda la página   `/offline` y sus recursos. Esperá el indicador **«Datos offline preparados»**   antes de cortar la conexión: requiere tanto el respaldo de datos como la página.3. Al perder conexión con el backend, aparece **«Modo offline»**. La disponibilidad   se vuelve a comprobar al reconectar, al abrir la pestaña y cada 45 segundos   mientras esté visible. Durante una sesión, el respaldo se actualiza cada 5   minutos aproximadamente. La fecha del respaldo y de las ventas se muestra en   formato de 24 horas.Si recargás o reabrís el sitio sin conexión después de prepararlo, el service workermuestra la pantalla `/offline` (aunque la URL siga siendo la que recargaste). Allíse recuperan el catálogo y las ventas pendientes deldispositivo. Si no se pudo confirmar que la página esté lista para recargar, apareceuna advertencia. También se advierte si el navegador no puede guardar el borradorde una venta. Cuando vuelve la conexión, `/offline` permite regresar al panel.### Funciones disponibles- **Productos:** búsqueda y detalle de variantes con stock por punto de venta y  depósito. Las cifras indican el **último stock conocido**, no una reserva; las  imágenes no se cargan offline. No se permite crear, editar ni eliminar productos.- **Venta nueva:** permite agregar varios artículos de una misma ubicación y  registrar una venta *pendiente de sincronización*. El carrito, ubicación, medio  de pago y datos del artículo seleccionado se conservan como borrador local por  usuario incluso al recargar. La venta todavía no descuenta stock en el servidor.- **Sincronización:** muestra ventas pendientes y las que **requieren revisión**.  Cuando regresa la conexión, el panel intenta enviar las pendientes. Si el servidor  rechaza una venta (por ejemplo, por falta de stock), se conserva para ajustar  cantidades, reintentar o descartar. La confirmación ocurre únicamente tras la  respuesta del backend; cada venta tiene un ID para evitar duplicados al reintentar.Mientras esté offline, **todo el menú lateral queda desactivado**. Usá las pestañasde la pantalla offline para Productos, Venta nueva y Sincronización. Dashboard,historial, stock bajo, transferencias, Tienda Nube, configuración, pedidos de puntode venta y Agent Iron no están disponibles. En el menú online, **Sincronización**figura justo antes de Configuración. No se puede cerrar sesión con ventas pendienteso sin conexión.### Dónde se guardan los datos y cómo probarloEl catálogo y la cola de ventas viven en **IndexedDB**; el borrador del carrito, en`localStorage`. Son datos locales a cada navegador/dispositivo y usuario. Borrar losdatos del sitio o desinstalarlo **elimina las ventas aún no sincronizadas y losborradores**; no afecta a las ventas ya confirmadas en PostgreSQL.Para probar una recarga: con backend y frontend funcionando, iniciá sesión y esperá«Datos offline preparados»; activá **Network → Offline** en las herramientas delnavegador, guardá una venta pendiente y recargá. Debe aparecer la pantalla offline con elcatálogo y la venta guardados. Volvé a **Online** para comprobar la sincronización.Las pruebas automatizadas `offline-shell.test.cjs` verifican que la página se puedaservir desde la caché y que no se marque preparada si le faltan recursos.Antes de desplegar esta versión, aplicá a la base correspondiente la migración delbackend `prisma/manual-migrations/20260930_offline_sales.sql` (ver`backend/README.md`).
+# Iron Frontend
+
+Panel privado de `Iron Stock`.
+
+Version actual: **2.4.0**. Ver [historial de versiones](CHANGELOG.md).
+
+La version 2.4.0 agrega el empaquetado nativo con Tauri v2 para Windows y Android, que carga el frontend publicado en Vercel y mantiene el backend en Render. Incluye ademas las mejoras de login y la persistencia de paginacion de 2.3.0. No requiere cambios adicionales del backend.
+
+## Instruccion para OpenCode: revision de versiones
+
+Cuando analices este proyecto, revisa `CHANGELOG.md`, los commits posteriores al ultimo hito documentado y los cambios pendientes. Determina si una correccion importante, una mejora significativa o un cambio incompatible justifican aumentar la version; no des por hecho que el numero de `package.json` ya refleja el codigo.
+
+Si corresponde subirla, usa versionado semantico: **patch** para correcciones compatibles, **minor** para funcionalidades o mejoras compatibles y **major** para cambios incompatibles. Actualiza `package.json`, los campos `version` de la raiz y de `packages[""]` en `package-lock.json`, `CHANGELOG.md` con los commits relacionados y la version indicada en este README. Si el cambio forma parte de un hito conjunto con el backend, coordina la version en ambos repositorios. Si todavia no corresponde subirla, explica brevemente el motivo en el analisis.
+
+## Stack
+
+- Next.js 15
+- React 19
+- Tailwind CSS
+- Zustand
+
+## Variables de entorno
+
+Crear `iron/frontend/.env.local` con:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:4000
+BACKEND_API_URL=http://localhost:4000
+NEXT_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=TU_ANON_KEY
+```
+
+## Desarrollo
+
+```bash
+npm install
+npm run dev
+```
+
+## Aplicacion de escritorio y movil (Tauri v2)
+
+Este frontend tambien se empaqueta como aplicacion nativa con Tauri v2 para Windows y Android. La app carga el frontend publicado en Vercel (`https://ironthreads-frontend.vercel.app`); el backend sigue en Render y los Route Handlers de Vercel actuan como BFF. No se expone ninguna API nativa al contenido remoto (`capabilities` vacias).
+
+- Nombre visible: `Iron Stock | Gestion Iron Threads`
+- Identificador: `com.ironthreads.ironstock`
+- Version nativa: se toma de `package.json` (`build.version` -> `../package.json`), por lo que permanece sincronizada con la version semantica del frontend.
+
+Requisitos en Windows: Rust (toolchain MSVC) y WebView2. Para Android: Rust con los targets de Android instalados, Android SDK/NDK y un JDK.
+
+```bash
+# Escritorio (Windows): abre el frontend remoto
+npm run tauri:dev
+npm run tauri:build
+
+# Android (una sola vez, genera src-tauri/gen/android)
+npm run tauri:android:init
+
+# Android en emulador o dispositivo conectado
+npm run tauri:android:dev
+
+# APK de depuracion
+npx tauri android build --debug --apk
+```
+
+`npm run tauri:build` genera instaladores en `src-tauri/target/release/bundle/`:
+
+- NSIS: `nsis/Iron Stock_<version>_x64-setup.exe`
+- MSI: `msi/Iron Stock_<version>_x64_en-US.msi`
+
+Se instalan con doble clic. Al no estar firmados, Windows SmartScreen puede advertir; para pruebas locales se continua con **Mas informacion > Ejecutar de todos modos**. El primer uso instala WebView2 si falta.
+
+Para cambiar los iconos (Windows y Android) desde un PNG cuadrado con transparencia:
+
+```bash
+npx tauri icon src/app/icon.png
+```
+
+Regenera `src-tauri/icons/` y los `mipmap` de `src-tauri/gen/android`. Luego recompila (`npm run tauri:build` y/o `npx tauri android build`).
+
+Notas:
+
+- En Windows, la creacion de symlinks requiere **Modo de desarrollador** activado; sin el, el build Android falla con `Creation symbolic link is not allowed for this system`.
+- Si el proyecto y el registro de Cargo quedan en unidades distintas, `src-tauri/gen/android/gradle.properties` incluye `kotlin.incremental=false` para evitar el fallo del daemon de Kotlin. Debe reaplicarse si se regenera `gen/android`.
+- La app depende de conexion para cargar Vercel. El modo offline debe verificarse por separado dentro del WebView.
+
+## Verificacion
+
+```bash
+npm run typecheck
+node --test offline-shell.test.cjs
+```
+
+## Cambios relevantes
+
+- El login adapta su composicion a pantallas pequenas y permite mostrar la contrasena solo mientras se mantiene presionado el control correspondiente.
+- Productos y el historial de ventas recuerdan durante la sesion la ultima pagina visitada. Productos asocia la pagina a los filtros y la busqueda activos.
+- Las tablas permiten desplazar la pagina verticalmente al iniciar el gesto sobre ellas, conservando el desplazamiento horizontal de columnas.
+- Productos, transferencias e historial de ventas comparten paginacion compacta con navegacion directa y controles adaptables a movil.
+- Agent Iron tiene un boton compacto en movil y una animacion que respeta la preferencia de movimiento reducido.
+- `Ventas` separa `Venta nueva` y `Ventas de punto de venta`.
+- `Productos` permite cargar `price`, `imageUrl` e imagenes a Supabase Storage en el bucket publico `product-images`.
+
+## Integracion con catalogo
+
+Desde este panel se confirma el pago de pedidos creados en `iron-catalog`.
+
+Al confirmar un pedido:
+
+- se crea una `Sale`;
+- se descuenta stock;
+- se vincula `saleId` al `CatalogOrder`.
+
+## Modo offline
+
+### Preparacion y acceso
+
+1. Abri el panel e inicia sesion con conexion. En `localhost` el service worker tambien se instala con `npm run dev`; en produccion se requiere HTTPS.
+2. El panel descarga productos, variantes, precios, puntos de venta, depositos y stock en IndexedDB. No descarga imagenes. El service worker guarda la pagina `/offline` y sus recursos. Espera el indicador `Datos offline preparados` antes de cortar la conexion.
+3. Al perder conexion con el backend aparece `Modo offline`. La disponibilidad se comprueba al reconectar, al abrir la pestana y cada 45 segundos mientras este visible. Durante una sesion, el respaldo se actualiza aproximadamente cada 5 minutos.
+
+Si recargas o reabres el sitio sin conexion despues de prepararlo, el service worker muestra la pantalla `/offline`, aunque la URL conserve la ruta recargada. Alli se recuperan el catalogo y las ventas pendientes del dispositivo. Cuando vuelve la conexion, `/offline` permite regresar al panel.
+
+### Funciones disponibles
+
+- **Productos:** busqueda y detalle de variantes con el ultimo stock conocido por punto de venta y deposito. Las imagenes no se cargan y no se permite crear, editar ni eliminar productos sin conexion.
+- **Venta nueva:** permite registrar ventas pendientes desde una misma ubicacion. El carrito, la ubicacion, el medio de pago y el articulo seleccionado se conservan por usuario en el dispositivo.
+- **Sincronizacion:** permite revisar, reintentar o descartar ventas pendientes. Cada venta utiliza un identificador para evitar duplicados al reintentar.
+
+Mientras el panel esta offline, el menu lateral queda desactivado. Dashboard, historial, stock bajo, transferencias, Tienda Nube, configuracion, pedidos de punto de venta y Agent Iron no estan disponibles. Tampoco se puede cerrar sesion con ventas pendientes o sin conexion.
+
+### Donde se guardan los datos y como probarlo
+
+El catalogo y la cola de ventas viven en IndexedDB; el borrador del carrito, en `localStorage`. Borrar los datos del sitio o desinstalarlo elimina las ventas aun no sincronizadas y los borradores, pero no afecta las ventas confirmadas en PostgreSQL.
+
+Para probar una recarga, inicia sesion con backend y frontend activos, espera `Datos offline preparados`, activa **Network > Offline** en las herramientas del navegador, guarda una venta pendiente y recarga. Debe aparecer la pantalla offline con el catalogo y la venta guardados. Vuelve a **Online** para comprobar la sincronizacion.
+
+Las pruebas `offline-shell.test.cjs` verifican que la pagina pueda servirse desde la cache y que no se marque como preparada si faltan recursos.
+
+Antes de desplegar el hito offline, aplica la migracion del backend `prisma/manual-migrations/20260930_offline_sales.sql` indicada en `backend/README.md`.

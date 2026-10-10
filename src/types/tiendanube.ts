@@ -62,3 +62,41 @@ export type AbandonedCheckout = {
 export type AbandonedCheckoutDetail = AbandonedCheckout & {
   messageLogs: MessageLog[];
 };
+
+export type TiendaNubeCustomer = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  totalSpent: string | null;
+  totalSpentCurrency: string | null;
+  acceptsMarketing: boolean;
+  unsubscribedAt: string | null;
+  lastOrderId: string | null;
+  createdAtFromTN: string | null;
+  updatedAtFromTN: string | null;
+  storeIntegration: { storeId: string };
+};
+
+export type CustomersResponse = { items: TiendaNubeCustomer[]; total: number; page: number; perPage: number };
+
+export type Campaign = {
+  id: string;
+  name: string;
+  subject: string;
+  html: string;
+  templateName: string;
+  status: 'draft' | 'scheduled' | 'sending' | 'completed' | 'paused' | 'cancelled' | 'error';
+  sendAt: string | null;
+  totalRecipients: number;
+  sentCount: number;
+  failedCount: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CampaignLog = { id: string; recipient: string; status: string; providerMessageId: string | null; errorMessage: string | null; sentAt: string | null; createdAt: string };
+
+export type CampaignTemplate = { key: string; label: string; subject: string; html: string };

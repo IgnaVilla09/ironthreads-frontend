@@ -1,4 +1,4 @@
-import { AbandonedCheckout, HealthResponse, MessageLog } from '@/types/tiendanube';
+import { AbandonedCheckout, Campaign, CampaignLog, CampaignTemplate, CustomersResponse, HealthResponse, MessageLog } from '@/types/tiendanube';
 
 const API_BASE = '/api/tiendanube';
 const REQUEST_TIMEOUT = 20000;
@@ -183,4 +183,16 @@ export const tiendaNubeApiClient = {
   },
   getCheckouts: () => request<AbandonedCheckout[]>('/checkouts'),
   getMessageLogs: () => request<MessageLog[]>('/message-logs'),
+  getCustomers: (params?: Record<string, string | number | undefined>) => request<CustomersResponse>('/customers', { params }),
+  syncCustomers: () => request<{ ok: boolean }>('/customers/sync', { method: 'POST' }),
+  getCampaigns: () => request<Campaign[]>('/campaigns'),
+  getCampaign: (id: string) => request<Campaign>(`/campaigns/${id}`),
+  getCampaignLogs: (id: string) => request<CampaignLog[]>(`/campaigns/${id}/logs`),
+  getCampaignTemplates: () => request<CampaignTemplate[]>('/campaigns/templates'),
+  previewCampaignAudience: (body: { minTotalSpent?: number }) => request<{ total: number }>('/campaigns/preview-audience', { method: 'POST', body }),
+  createCampaign: (body: { name: string; subject: string; html: string; templateName?: string; minTotalSpent?: number }) => request<Campaign>('/campaigns', { method: 'POST', body }),
+  sendCampaignTest: (id: string, email: string) => request<{ status: 'sent' | 'dry_run' }>(`/campaigns/${id}/send-test`, { method: 'POST', body: { email } }),
+  scheduleCampaign: (id: string, sendAt?: string) => request<{ ok: boolean }>(`/campaigns/${id}/schedule`, { method: 'POST', body: sendAt ? { sendAt } : {} }),
+  pauseCampaign: (id: string) => request<{ ok: boolean }>(`/campaigns/${id}/pause`, { method: 'POST' }),
+  cancelCampaign: (id: string) => request<{ ok: boolean }>(`/campaigns/${id}/cancel`, { method: 'POST' }),
 };

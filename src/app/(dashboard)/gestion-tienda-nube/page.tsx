@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { AlertTriangle, FileText, PackageSearch, RefreshCw } from 'lucide-react';
+import { AlertTriangle, FileText, PackageSearch, RefreshCw, Send, Users } from 'lucide-react';
 import { PageContainer } from '@/components/layout/page-container';
 import { PageHeader } from '@/components/shared/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,18 @@ const sections = [
     description: 'Revision de mensajes enviados, errores y ultimos eventos procesados.',
     href: '/gestion-tienda-nube/logs',
     icon: FileText,
+  },
+  {
+    title: 'Clientes',
+    description: 'Clientes de Tienda Nube, consentimiento de marketing y datos de compra.',
+    href: '/gestion-tienda-nube/customers',
+    icon: Users,
+  },
+  {
+    title: 'Campañas',
+    description: 'Emails HTML, pruebas y envíos programados en lotes.',
+    href: '/gestion-tienda-nube/campaigns',
+    icon: Send,
   },
 ];
 

@@ -5,7 +5,7 @@ const REQUEST_TIMEOUT = 20000;
 const HEALTH_MAX_WAIT = 45000;
 
 type RequestConfig = {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'DELETE';
   body?: unknown;
   params?: Record<string, string | number | undefined>;
 };
@@ -185,6 +185,12 @@ export const tiendaNubeApiClient = {
   getMessageLogs: () => request<MessageLog[]>('/message-logs'),
   getCustomers: (params?: Record<string, string | number | undefined>) => request<CustomersResponse>('/customers', { params }),
   syncCustomers: () => request<{ ok: boolean }>('/customers/sync', { method: 'POST' }),
+  sendDirectEmail: (body: { to: string; subject: string; html: string }) => request<{ id: string | null }>('/direct-email', { method: 'POST', body }),
+  sendBulkEmail: (body: { subject: string; html: string; minTotalSpent?: number }) => request<{ sent: number; suppressed: number; totalEligible: number }>('/bulk-email', { method: 'POST', body }),
+  getEmailSuppressions: () => request<Array<{ id: string; email: string; reason: string | null; createdAt: string }>>('/email-suppressions'),
+  addEmailSuppression: (body: { email: string; reason?: string }) => request<{ id: string; email: string; reason: string | null; createdAt: string }>('/email-suppressions', { method: 'POST', body }),
+  removeEmailSuppression: (id: string) => request<void>(`/email-suppressions/${id}`, { method: 'DELETE' }),
+  getEmailHistory: () => request<Array<{ id: string; type: 'single' | 'bulk'; recipient: string | null; recipientCount: number; suppressedCount: number; subject: string; providerId: string | null; createdAt: string }>>('/email-history'),
   getCampaigns: () => request<Campaign[]>('/campaigns'),
   getCampaign: (id: string) => request<Campaign>(`/campaigns/${id}`),
   getCampaignLogs: (id: string) => request<CampaignLog[]>(`/campaigns/${id}/logs`),

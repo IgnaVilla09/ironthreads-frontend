@@ -1,8 +1,19 @@
 # Historial de versiones - Iron Stock (frontend)
 
-Version actual: **2.4.0**.
+Version actual: **2.5.0**.
 
 Los hitos anteriores se reconstruyeron a partir del historial de commits del frontend y se alinearon con los del backend. No se crearon etiquetas ni releases para todas estas versiones: las fechas y los hashes indican cuando se incorporaron los cambios, no necesariamente cuando se publicaron formalmente.
+
+## 2.5.0 - 2026-10-10 - Campañas a clientes puntuales
+
+- Opción para enviar una plantilla directamente a un email de cliente mediante Resend, sin crear una campaña.
+- Se conserva el envío por audiencia con consentimiento y sus filtros de compra.
+- Previsualización HTML disponible mientras se edita la plantilla.
+- Envío masivo inmediato mediante Resend en lotes, limitado a contactos con consentimiento y sin baja activa.
+- Lista negra persistente de emails para excluir contactos de todos los envíos masivos.
+- Reemplazo de la sección de campañas por Emails, con historial de envíos puntuales y masivos realizados mediante Resend.
+
+Mejora compatible del frontend; el envío individual utiliza un endpoint autenticado de Resend para no programar la audiencia completa.
 
 ## 2.4.0 - 2026-10-09 - Aplicacion nativa con Tauri v2
 

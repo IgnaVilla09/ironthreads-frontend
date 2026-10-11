@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { APP_SESSION_COOKIE, getBackendApiBase } from '@/lib/server-auth';
 
-export async function proxyTiendaNube(path: string, init: { method?: 'GET' | 'POST'; body?: unknown } = {}) {
+export async function proxyTiendaNube(path: string, init: { method?: 'GET' | 'POST' | 'DELETE'; body?: unknown } = {}) {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(APP_SESSION_COOKIE)?.value;
   if (!sessionToken) {

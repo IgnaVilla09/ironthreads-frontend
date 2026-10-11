@@ -30,9 +30,9 @@ const sections = [
     icon: Users,
   },
   {
-    title: 'Campañas',
-    description: 'Emails HTML, pruebas y envíos programados en lotes.',
-    href: '/gestion-tienda-nube/campaigns',
+    title: 'Emails',
+    description: 'Envíos de Resend e historial de destinatarios, resultados y exclusiones.',
+    href: '/gestion-tienda-nube/emails',
     icon: Send,
   },
 ];

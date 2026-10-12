@@ -20,6 +20,7 @@ export interface Product {
   categoryId: string;
   imageUrl: string | null;
   price: number | null;
+  isOnSale: boolean;
   category: CategoryOption;
   createdAt: string;
   updatedAt: string;
@@ -50,6 +51,7 @@ export interface CreateProductInput {
   categoryId: string;
   imageUrl?: string;
   price?: number;
+  isOnSale?: boolean;
 }
 
 export interface UpdateProductInput {
@@ -58,6 +60,7 @@ export interface UpdateProductInput {
   categoryId?: string;
   imageUrl?: string | null;
   price?: number | null;
+  isOnSale?: boolean;
 }
 
 export interface InventoryAllocation {

@@ -1,8 +1,17 @@
 # Historial de versiones - Iron Stock (frontend)
 
-Version actual: **2.5.0**.
+Version actual: **2.6.0**.
 
 Los hitos anteriores se reconstruyeron a partir del historial de commits del frontend y se alinearon con los del backend. No se crearon etiquetas ni releases para todas estas versiones: las fechas y los hashes indican cuando se incorporaron los cambios, no necesariamente cuando se publicaron formalmente.
+
+## 2.6.0 - 2026-10-12 - Configuración comercial
+
+- Configuración dividida entre inventario y negocio.
+- Gestión de códigos de descuento: alta, edición, eliminación, tipo de descuento, compra mínima y límite de usos.
+- Administración de productos en oferta desde Configuración del negocio.
+- Checkbox de producto en oferta dentro del formulario de producto.
+
+Requiere backend 2.4.0.
 
 ## 2.5.0 - 2026-10-10 - Campañas a clientes puntuales
 

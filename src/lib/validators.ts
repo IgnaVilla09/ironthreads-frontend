@@ -10,6 +10,7 @@ export const createProductSchema = z.object({
   categoryId: z.string().uuid('Seleccioná una categoría válida'),
   imageUrl: z.string().url('La imagen debe ser una URL válida').or(z.literal('')).optional(),
   price: z.coerce.number().int().min(0, 'El precio no puede ser negativo').optional(),
+  isOnSale: z.boolean().optional(),
 });
 
 export type CreateProductFormData = z.infer<typeof createProductSchema>;

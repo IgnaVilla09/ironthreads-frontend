@@ -102,10 +102,11 @@ export function ProductForm({ initialData }: ProductFormProps) {
           name: initialData.name,
           description: initialData.description ?? '',
           categoryId: initialData.categoryId,
-          imageUrl: initialData.imageUrl ?? '',
-          price: initialData.price ?? undefined,
+           imageUrl: initialData.imageUrl ?? '',
+           price: initialData.price ?? undefined,
+           isOnSale: initialData.isOnSale,
         }
-      : { name: '', description: '', categoryId: '', imageUrl: '' },
+      : { name: '', description: '', categoryId: '', imageUrl: '', isOnSale: false },
   });
 
   const name = watch('name');
@@ -174,7 +175,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
           description: data.description || undefined,
           categoryId: data.categoryId,
           imageUrl: data.imageUrl?.trim() || null,
-          price: normalizedPrice ?? null,
+           price: normalizedPrice ?? null,
+           isOnSale: data.isOnSale ?? false,
         });
         addToast('Producto actualizado correctamente', 'success');
       } else {
@@ -183,7 +185,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
           description: data.description || undefined,
           categoryId: data.categoryId,
           imageUrl: data.imageUrl?.trim() || undefined,
-          price: normalizedPrice,
+           price: normalizedPrice,
+           isOnSale: data.isOnSale ?? false,
         });
         if (newVariant.colorId && newVariant.sizeId) {
           const inventory = buildInventoryAllocations();
@@ -338,7 +341,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
               )}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="price">Precio catálogo</Label>
                 <Input
@@ -358,7 +361,15 @@ export function ProductForm({ initialData }: ProductFormProps) {
                 {errors.price && (
                   <p className="text-sm text-red-500">{errors.price.message}</p>
                 )}
-              </div>
+             </div>
+
+             <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-dashed p-4">
+               <input type="checkbox" className="mt-1 h-4 w-4" {...register('isOnSale')} />
+               <span>
+                 <span className="block text-sm font-medium">Producto en oferta</span>
+                 <span className="block text-xs text-gray-500">Muestra la pegatina de oferta en el catálogo público.</span>
+               </span>
+             </label>
 
               <div className="space-y-2">
                 <Label htmlFor="imageUrl">Imagen del catálogo</Label>

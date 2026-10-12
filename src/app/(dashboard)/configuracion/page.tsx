@@ -18,6 +18,7 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { LoadingState } from '@/components/shared/loading-state';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useToastStore } from '@/stores/toast-store';
+import { BusinessSettings } from '@/components/settings/business-settings';
 import type {
   CategoryOption,
   ColorOption,
@@ -27,6 +28,7 @@ import type {
 } from '@/types/settings';
 
 type Tab = 'colores' | 'talles' | 'categorias' | 'puntos-venta';
+type SettingsSection = 'inventario' | 'negocio';
 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'puntos-venta', label: 'Puntos de Venta' },
@@ -64,6 +66,7 @@ function ColorSwatch({ hex }: { hex: string | null }) {
 
 export default function ConfiguracionPage() {
   const [activeTab, setActiveTab] = useState<Tab>('puntos-venta');
+  const [activeSection, setActiveSection] = useState<SettingsSection>('inventario');
   const addToast = useToastStore((s) => s.addToast);
   const {
     categories,
@@ -323,8 +326,21 @@ export default function ConfiguracionPage() {
     <PageContainer>
       <PageHeader
         title="Configuración"
-        description="Administra colores, talles y categorías de productos"
+        description="Administrá la operación interna y las reglas del catálogo"
       />
+
+      <div className="mb-6 grid gap-2 sm:grid-cols-2">
+        <button type="button" onClick={() => setActiveSection('inventario')} className={`rounded-lg border p-4 text-left transition-colors ${activeSection === 'inventario' ? 'border-gray-900 bg-gray-900 text-white' : 'bg-white hover:border-gray-400'}`}>
+          <span className="block font-semibold">Configuración de inventario</span>
+          <span className={`mt-1 block text-sm ${activeSection === 'inventario' ? 'text-gray-300' : 'text-gray-500'}`}>Puntos de venta, depósitos, categorías, colores y talles.</span>
+        </button>
+        <button type="button" onClick={() => setActiveSection('negocio')} className={`rounded-lg border p-4 text-left transition-colors ${activeSection === 'negocio' ? 'border-gray-900 bg-gray-900 text-white' : 'bg-white hover:border-gray-400'}`}>
+          <span className="block font-semibold">Configuración del negocio</span>
+          <span className={`mt-1 block text-sm ${activeSection === 'negocio' ? 'text-gray-300' : 'text-gray-500'}`}>Códigos de descuento y productos en oferta.</span>
+        </button>
+      </div>
+
+      {activeSection === 'negocio' ? <BusinessSettings /> : <>
 
       {/* Tabs */}
       <div className="mb-6 flex gap-1 rounded-lg border bg-gray-100 p-1">
@@ -743,6 +759,7 @@ export default function ConfiguracionPage() {
           </div>
         </div>
       )}
+      </>}
 
       {/* Category Dialog */}
       <Dialog
